@@ -1,0 +1,5 @@
+description: Toggle between the standard and fast cursor speeds
+
+compatible: "c4mtb,behavior-cursor-speed"
+
+include: zero_param.yaml

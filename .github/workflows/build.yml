@@ -1,0 +1,108 @@
+name: Build ZMK firmware
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build.yml"
+      - "CMakeLists.txt"
+      - "Kconfig"
+      - "boards/**"
+      - "config/**"
+      - "dts/**"
+      - "snippets/**"
+      - "src/**"
+      - "patches/**"
+      - "tests/**"
+      - "scripts/apply_pmw3610_patch.py"
+      - "scripts/test_pmw3610_recovery.py"
+      - "zephyr/**"
+      - "build.yaml"
+      - "scripts/verify_firmware_hardware.py"
+      - "scripts/verify_firmware_hardware_editor.py"
+      - "scripts/verify_telemetry.py"
+  pull_request:
+    paths:
+      - ".github/workflows/build.yml"
+      - "CMakeLists.txt"
+      - "Kconfig"
+      - "boards/**"
+      - "config/**"
+      - "dts/**"
+      - "snippets/**"
+      - "src/**"
+      - "patches/**"
+      - "tests/**"
+      - "scripts/apply_pmw3610_patch.py"
+      - "scripts/test_pmw3610_recovery.py"
+      - "zephyr/**"
+      - "build.yaml"
+      - "scripts/verify_firmware_hardware.py"
+      - "scripts/verify_firmware_hardware_editor.py"
+      - "scripts/verify_telemetry.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/verify_firmware_hardware_editor.py
+      - run: python3 scripts/verify_telemetry.py
+      - name: Test PMW3610 recovery with injected faults
+        run: |
+          git clone https://github.com/cormoran/zmk-driver-pmw3610-with-custom-studio-rpc.git /tmp/pmw3610
+          git -C /tmp/pmw3610 checkout 5c34ea0eec246a1c986111417cd779b53144629a
+          python3 scripts/apply_pmw3610_patch.py /tmp/pmw3610
+          python3 scripts/test_pmw3610_recovery.py /tmp/pmw3610
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container:
+      image: zmkfirmware/zmk-build-arm:stable
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore west modules
+        id: west-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: dependencies/
+          key: ${{ runner.os }}-dya-${{ hashFiles('config/west*.yml', 'patches/**') }}
+          restore-keys: |
+            ${{ runner.os }}-dya-
+      - name: Initialize west workspace
+        run: |
+          git config --global --add safe.directory ${{ github.workspace }}
+          west init -l config --mf west-isolated.yml
+          west update --narrow
+          python3 scripts/apply_pmw3610_patch.py
+          west zephyr-export
+      - name: Build all firmware variants
+        run: west zmk-build -d ./build -q
+      - name: Collect UF2 files
+        shell: sh -x {0}
+        run: |
+          mkdir -p artifacts
+          find ./build -type f -path '*/zephyr/zmk.uf2' | while read -r file; do
+            name=$(basename "$(dirname "$(dirname "$file")")")
+            mv "$file" "artifacts/${name}.uf2"
+          done
+      - name: Save west modules
+        if: always() && steps.west-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: dependencies/
+          key: ${{ runner.os }}-dya-${{ hashFiles('config/west*.yml', 'patches/**') }}
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: zmk-firmware
+          path: artifacts/*.uf2
+          if-no-files-found: error

@@ -1,0 +1,29 @@
+menuconfig C4MTB_TELEMETRY
+    bool "C4MTB privacy-preserving usage counters"
+    depends on SETTINGS
+    depends on ZMK_SPLIT_ROLE_CENTRAL
+    depends on ZMK_POINTING
+    help
+      Store cumulative physical-position, layer, mouse-button, and pointing
+      counters on the central half. No characters, sequences, application
+      names, or timestamps are recorded.
+
+if C4MTB_TELEMETRY
+
+config C4MTB_TELEMETRY_SAVE_INTERVAL_MINUTES
+    int "Telemetry save interval in minutes"
+    range 5 1440
+    default 30
+    help
+      Minimum interval between writes to settings storage while counters are
+      changing. Longer intervals reduce flash wear but increase the amount of
+      data that can be lost if power is removed.
+
+config C4MTB_TELEMETRY_EXPORT
+    bool "Periodically print telemetry to the console"
+    default n
+    help
+      Print a machine-readable snapshot every five seconds. Enable this only
+      in the dedicated export firmware used on a personal computer.
+
+endif

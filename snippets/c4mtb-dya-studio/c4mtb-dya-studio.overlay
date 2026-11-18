@@ -1,0 +1,15 @@
+/*
+ * Reverse both normal scroll directions relative to the previous firmware.
+ * The base scroller applies Y_INVERT, so toggling Y back to normal and adding
+ * X_INVERT is represented here as an X-only transform override.
+ * Zoom keeps its existing Y-only transform unchanged.
+ */
+&trackball_listener {
+    scroller {
+        input-processors = <&zip_xy_to_scroll_mapper>,
+                           <&zip_scroll_transform INPUT_TRANSFORM_X_INVERT>,
+                           <&c4mtb_telemetry 1>,
+                           <&zip_scroll_snap>,
+                           <&c4mtb_scroll_runtime>;
+    };
+};

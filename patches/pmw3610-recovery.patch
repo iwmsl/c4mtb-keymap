@@ -1,0 +1,281 @@
+diff --git a/src/pixart.h b/src/pixart.h
+index 1967701..c86455c 100644
+--- a/src/pixart.h
++++ b/src/pixart.h
+@@ -51,6 +51,9 @@ struct pixart_data {
+     struct k_work trigger_work;       // realtrigger job
+ 
+     struct k_work_delayable init_work; // the work structure for delayable init steps
++    struct k_work_delayable health_work;
++    unsigned int recovery_errors;
++    bool suspended;
+     int async_init_step;
+     int async_init_retry_count; // retry count for async init
+ 
+diff --git a/src/pmw3610.c b/src/pmw3610.c
+index cd809bc..3c5c258 100644
+--- a/src/pmw3610.c
++++ b/src/pmw3610.c
+@@ -226,16 +226,16 @@ static int pmw3610_write_reg(const struct device *dev, uint8_t addr, uint8_t val
+ }
+ 
+ static int pmw3610_write(const struct device *dev, uint8_t reg, uint8_t val) {
+-    pmw3610_write_reg(dev, PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_ENABLE);
+-    k_sleep(K_USEC(T_CLOCK_ON_DELAY_US));
+-
+-    int err = pmw3610_write_reg(dev, reg, val);
+-    if (unlikely(err != 0)) {
+-        return err;
++    int err = pmw3610_write_reg(dev, PMW3610_REG_SPI_CLK_ON_REQ,
++                                PMW3610_SPI_CLOCK_CMD_ENABLE);
++    if (!err) {
++        k_sleep(K_USEC(T_CLOCK_ON_DELAY_US));
++        err = pmw3610_write_reg(dev, reg, val);
+     }
+-
+-    pmw3610_write_reg(dev, PMW3610_REG_SPI_CLK_ON_REQ, PMW3610_SPI_CLOCK_CMD_DISABLE);
+-    return 0;
++    /* Always release the clock, even when the payload failed. */
++    int cleanup = pmw3610_write_reg(dev, PMW3610_REG_SPI_CLK_ON_REQ,
++                                    PMW3610_SPI_CLOCK_CMD_DISABLE);
++    return err ? err : cleanup;
+ }
+ 
+ /* Caller must hold data->lock (composite multi-write sequence). */
+@@ -537,7 +537,9 @@ static void pmw3610_async_init(struct k_work *work) {
+         return;
+     }
+ 
++    k_mutex_lock(&data->lock, K_FOREVER);
+     data->err = async_init_fn[current_step](dev);
++    k_mutex_unlock(&data->lock);
+     if (data->err) {
+         if (data->async_init_retry_count < 10) {
+             data->async_init_retry_count++;
+@@ -554,6 +556,7 @@ static void pmw3610_async_init(struct k_work *work) {
+ 
+         if (next_step == ASYNC_INIT_STEP_COUNT) {
+             data->ready = true; // sensor is ready to work
++            data->recovery_errors = 0;
+             LOG_INF("PMW3610 initialized");
+             pmw3610_set_interrupt(dev, true);
+         } else if (next_step < ASYNC_INIT_STEP_COUNT) {
+@@ -583,7 +586,8 @@ static int pmw3610_report_data(const struct device *dev) {
+         return 0;
+     }
+     struct pixart_runtime_config rt = data->runtime;
+-    k_mutex_unlock(&data->lock);
++    /* Keep the entire read + smart-algorithm write atomic against activity
++     * callbacks and Studio's multi-transfer register/page sequences. */
+ 
+     uint32_t report_interval_min_ms = rt.report_interval_min_ms;
+     int64_t now = k_uptime_get();
+@@ -592,12 +596,14 @@ static int pmw3610_report_data(const struct device *dev) {
+         // Burst mode requires cs pin to reset
+         int err = pmw3610_read(dev, PMW3610_REG_MOTION_BURST, buf, sizeof(buf));
+         if (err) {
++            k_mutex_unlock(&data->lock);
+             return err;
+         }
+     } else {
+         for (size_t i = 0; i < PMW3610_BURST_SIZE; i++) {
+             int err = pmw3610_read(dev, PMW3610_REG_MOTION + i, &buf[i], 1);
+             if (err) {
++                k_mutex_unlock(&data->lock);
+                 return err;
+             }
+         }
+@@ -628,15 +634,26 @@ static int pmw3610_report_data(const struct device *dev) {
+         int16_t shutter =
+             ((int16_t)(buf[PMW3610_SHUTTER_H_POS] & 0x01) << 8) + buf[PMW3610_SHUTTER_L_POS];
+         if (data->sw_smart_flag && shutter < 45) {
+-            pmw3610_write(dev, 0x32, 0x00);
++            int err = pmw3610_write(dev, 0x32, 0x00);
++            if (err) {
++                k_mutex_unlock(&data->lock);
++                return err;
++            }
+             data->sw_smart_flag = false;
+         }
+         if (!data->sw_smart_flag && shutter > 45) {
+-            pmw3610_write(dev, 0x32, 0x80);
++            int err = pmw3610_write(dev, 0x32, 0x80);
++            if (err) {
++                k_mutex_unlock(&data->lock);
++                return err;
++            }
+             data->sw_smart_flag = true;
+         }
+     }
+ 
++    /* Input callbacks can themselves change activity and acquire this lock. */
++    k_mutex_unlock(&data->lock);
++
+     if (report_interval_min_ms > 0) {
+         // purge accumulated delta, if last sampled had not been reported on last report tick
+         if (now - data->last_smp_time >= report_interval_min_ms) {
+@@ -680,19 +697,107 @@ static int pmw3610_report_data(const struct device *dev) {
+     return 0;
+ }
+ 
++/* IRQ work and the health check share the system workqueue. Never reset
++ * solely because there is no motion: a stationary ball is healthy. */
++static void pmw3610_recover_locked(const struct device *dev) {
++    struct pixart_data *data = dev->data;
++    pmw3610_set_interrupt(dev, false);
++    data->ready = false;
++    data->async_init_step = 0;
++    data->async_init_retry_count = 0;
++    data->sw_smart_flag = false;
++    data->dx = data->dy = 0;
++    data->last_smp_time = data->last_rpt_time = 0;
++    data->recovery_errors = 0;
++    LOG_WRN("PMW3610 recovering sensor; keyboard remains connected");
++    k_work_reschedule(&data->init_work, K_MSEC(async_init_delay[0]));
++}
++
++static void pmw3610_health_check(struct k_work *work) {
++    struct pixart_data *data = CONTAINER_OF(k_work_delayable_from_work(work),
++                                          struct pixart_data, health_work);
++    const struct device *dev = data->dev;
++    const struct pixart_config *config = dev->config;
++    if (data->suspended) {
++        return;
++    }
++    /* Do not queue behind Studio frame capture or other long operations. */
++    if (k_mutex_lock(&data->lock, K_NO_WAIT) != 0) {
++        goto again;
++    }
++    if (data->capture_active) {
++        k_mutex_unlock(&data->lock);
++        goto again;
++    }
++    if (!data->ready) {
++        /* Retry an exhausted init without rebooting the keyboard. */
++        if (data->err && data->async_init_retry_count >= 10) {
++            pmw3610_recover_locked(dev);
++        }
++        k_mutex_unlock(&data->lock);
++        goto again;
++    }
++    uint8_t product_id = 0;
++    int err = pmw3610_read_reg(dev, PMW3610_REG_PRODUCT_ID, &product_id);
++    if (!err && product_id != PMW3610_PRODUCT_ID) {
++        err = -EIO;
++    }
++    int motion = gpio_pin_get_dt(&config->irq_gpio);
++    if (!err && motion < 0) {
++        err = motion;
++    }
++    if (err) {
++        pmw3610_set_interrupt(dev, false);
++        if (++data->recovery_errors >= 3) {
++            pmw3610_recover_locked(dev);
++        }
++    } else if (motion > 0 || data->recovery_errors) {
++        /* Also covers a missed/disabled MOTION interrupt and failed reports.
++         * Do not clear errors until an actual report transaction succeeds. */
++        k_work_submit(&data->trigger_work);
++    } else {
++        err = pmw3610_set_interrupt(dev, true);
++        if (err && ++data->recovery_errors >= 3) {
++            pmw3610_recover_locked(dev);
++        }
++    }
++    k_mutex_unlock(&data->lock);
++again:
++    k_work_reschedule(&data->health_work, K_SECONDS(1));
++}
++
+ static void pmw3610_gpio_callback(const struct device *gpiob, struct gpio_callback *cb,
+                                   uint32_t pins) {
+     struct pixart_data *data = CONTAINER_OF(cb, struct pixart_data, irq_gpio_cb);
+     const struct device *dev = data->dev;
+     pmw3610_set_interrupt(dev, false);
++    /* The periodic health check rescues a failed submission as well. */
+     k_work_submit(&data->trigger_work);
+ }
+ 
+ static void pmw3610_work_callback(struct k_work *work) {
+     struct pixart_data *data = CONTAINER_OF(work, struct pixart_data, trigger_work);
+     const struct device *dev = data->dev;
+-    pmw3610_report_data(dev);
+-    pmw3610_set_interrupt(dev, true);
++    int err = pmw3610_report_data(dev);
++    k_mutex_lock(&data->lock, K_FOREVER);
++    if (data->ready && !data->capture_active && !data->suspended) {
++        if (!err) {
++            err = pmw3610_set_interrupt(dev, true);
++        }
++        if (err) {
++            /* Avoid an IRQ storm on a stuck-low line after SPI failure. */
++            pmw3610_set_interrupt(dev, false);
++            LOG_WRN("PMW3610 report/IRQ failed: %d", err);
++            if (++data->recovery_errors >= 3) {
++                pmw3610_recover_locked(dev);
++            } else {
++                k_work_reschedule(&data->health_work, K_MSEC(20));
++            }
++        } else {
++            data->recovery_errors = 0;
++        }
++    }
++    k_mutex_unlock(&data->lock);
+ }
+ 
+ static int pmw3610_enable_irq(const struct device *dev) {
+@@ -735,6 +840,8 @@ static int pmw3610_resume(const struct device *dev) {
+     if (err) {
+         return err;
+     }
++    data->suspended = false;
++    k_work_reschedule(&data->health_work, K_SECONDS(1));
+     if (data->ready) {
+         return pmw3610_set_interrupt(dev, true);
+     }
+@@ -803,6 +910,7 @@ static int pmw3610_init(const struct device *dev) {
+     // The sensor is ready to work (i.e., data->ready=true after the above steps
+     // are finished)
+     k_work_init_delayable(&data->init_work, pmw3610_async_init);
++    k_work_init_delayable(&data->health_work, pmw3610_health_check);
+ 
+     if (!device_is_ready(config->irq_gpio.port)) {
+         LOG_ERR("IRQ GPIO device not ready");
+@@ -874,6 +982,8 @@ static int pmw3610_suspend(const struct device *dev) {
+     const struct pixart_config *config = dev->config;
+     struct pixart_data *data = dev->data;
+     LOG_DBG("Suspend PMW3610");
++    data->suspended = true;
++    k_work_cancel_delayable(&data->health_work);
+     if (!data->ready) {
+         k_work_cancel_delayable(&data->init_work);
+     }
+@@ -955,9 +1065,13 @@ static int on_activity_state(const zmk_event_t *eh) {
+             continue;
+         }
+         k_mutex_lock(&data->lock, K_FOREVER);
+-        bool force_awake = data->runtime.force_awake;
++        if (data->ready && !data->capture_active) {
++            int err = pmw3610_set_performance(dev, data->runtime.force_awake, enable);
++            if (err) {
++                LOG_WRN("PMW3610 activity update failed: %d", err);
++            }
++        }
+         k_mutex_unlock(&data->lock);
+-        pmw3610_set_performance(dev, force_awake, enable);
+     }
+ 
+     return 0;
+@@ -1007,7 +1121,11 @@ int pmw3610_read_register(const struct device *dev, uint8_t addr, uint8_t *value
+     if (!dev) {
+         return -ENODEV;
+     }
+-    return pmw3610_read_reg(dev, addr, value);
++    struct pixart_data *data = dev->data;
++    k_mutex_lock(&data->lock, K_FOREVER);
++    int err = pmw3610_read_reg(dev, addr, value);
++    k_mutex_unlock(&data->lock);
++    return err;
+ }
+ 
+ int pmw3610_write_register(const struct device *dev, uint8_t addr, uint8_t value) {

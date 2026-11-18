@@ -1,0 +1,40 @@
+if SHIELD_C4MTB_R
+
+config ZMK_KEYBOARD_NAME
+    default "c4mtb"
+
+config ZMK_SPLIT_ROLE_CENTRAL
+    default y
+
+config INPUT
+    default y
+
+config ZMK_POINTING
+    default y
+
+config SPI
+    default y
+
+config PMW3610
+    default y
+
+endif
+
+if SHIELD_C4MTB_L
+
+# peripheral側も名前を持たせ、BLEスキャナで左手を識別できるようにする。
+# ホストに見える名前はcentral(右手)の"c4mtb"のまま。
+config ZMK_KEYBOARD_NAME
+    default "c4mtb_L"
+
+endif
+
+if SHIELD_C4MTB_R || SHIELD_C4MTB_L
+
+config ZMK_SPLIT
+    default y
+
+config NFCT_PINS_AS_GPIOS
+    default y
+
+endif

@@ -1,0 +1,4 @@
+name: c4mtb-telemetry-export
+append:
+  EXTRA_CONF_FILE: c4mtb-telemetry-export.conf
+  EXTRA_DTC_OVERLAY_FILE: c4mtb-telemetry-export.overlay

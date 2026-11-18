@@ -1,0 +1,5 @@
+description: C4MTB privacy-preserving pointing telemetry processor
+
+compatible: "c4mtb,input-processor-telemetry"
+
+include: ip_one_param.yaml

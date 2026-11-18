@@ -1,0 +1,18 @@
+---
+include:
+  - board: xiao_ble//zmk
+    shield: c4mtb_r
+    snippets:
+      - studio-rpc-usb-uart
+      - c4mtb-dya-studio
+    artifact: c4mtb_R
+  - board: xiao_ble//zmk
+    shield: c4mtb_r
+    snippet: c4mtb-telemetry-export
+    artifact: c4mtb_R_telemetry_export
+  - board: xiao_ble//zmk
+    shield: c4mtb_l
+    artifact: c4mtb_L
+  - board: xiao_ble//zmk
+    shield: settings_reset
+    artifact: settings_reset

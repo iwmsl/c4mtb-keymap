@@ -1,0 +1,12 @@
+/ {
+    chosen {
+        zephyr,console = &c4mtb_telemetry_uart;
+        zephyr,shell-uart = &c4mtb_telemetry_uart;
+    };
+};
+
+&zephyr_udc0 {
+    c4mtb_telemetry_uart: c4mtb_telemetry_uart {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};

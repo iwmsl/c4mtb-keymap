@@ -1,0 +1,13 @@
+file_format: "1"
+id: c4mtb
+name: c4mtb
+type: shield
+url: https://github.com/iwmsl/c4mtb
+requires: [seeed_xiao]
+features:
+  - keys
+  - studio
+  - pointer
+siblings:
+  - c4mtb_r
+  - c4mtb_l

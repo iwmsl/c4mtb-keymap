@@ -11,6 +11,14 @@
 &lt { quick-tap-ms = <200>; };
 
 / {
+    behaviors {
+        cursor_speed: cursor_speed {
+            compatible = "c4mtb,behavior-cursor-speed";
+            display-name = "Cursor Speed";
+            #binding-cells = <0>;
+        };
+    };
+
     macros {
         /*
          * ボールでズームするためのレイヤー。押している間だけ LCTRL を保持し、
@@ -127,7 +135,7 @@
 
         settings_layer {
             bindings = <
-&bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4  &studio_unlock  &trans  &trans  &trans      &bt BT_CLR
+&bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4  &studio_unlock  &cursor_speed  &trans  &trans  &bt BT_CLR
 &trans        &trans        &trans        &trans        &trans        &trans          &trans  &trans  &trans      &bt BT_CLR_ALL
 &bootloader   &sys_reset    &trans        &trans        &trans        &trans          &trans  &trans  &sys_reset  &bootloader
               &trans        &trans        &trans        &trans        &trans          &trans  &trans              &trans

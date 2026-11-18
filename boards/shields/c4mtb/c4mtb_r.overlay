@@ -1,0 +1,208 @@
+#include "c4mtb.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/zmk/input_transform.h>
+#include <input/processors/runtime-input-processor.dtsi>
+#include <scroll-snap.dtsi>
+
+/ {
+    c4mtb_telemetry: c4mtb-telemetry {
+        compatible = "c4mtb,input-processor-telemetry";
+        #input-processor-cells = <1>;
+    };
+
+    c4mtb_scroll_runtime: c4mtb-scroll-runtime {
+        compatible = "zmk,input-processor-runtime";
+        processor-label = "scroll";
+        type = <INPUT_EV_REL>;
+        x-codes = <INPUT_REL_HWHEEL>;
+        y-codes = <INPUT_REL_WHEEL>;
+        scale-multiplier = <1>;
+        scale-divisor = <1>;
+        rotation-degrees = <0>;
+        track-remainders;
+        #input-processor-cells = <0>;
+    };
+
+    c4mtb_zoom_runtime: c4mtb-zoom-runtime {
+        compatible = "zmk,input-processor-runtime";
+        processor-label = "zoom";
+        type = <INPUT_EV_REL>;
+        x-codes = <INPUT_REL_HWHEEL>;
+        y-codes = <INPUT_REL_WHEEL>;
+        scale-multiplier = <1>;
+        scale-divisor = <4>;
+        rotation-degrees = <0>;
+        track-remainders;
+        #input-processor-cells = <0>;
+    };
+};
+
+/* Cursor gain is independent of the scroll/zoom layer overrides below. */
+&mouse_runtime_input_processor {
+    scale-multiplier = <5>;
+    scale-divisor = <4>;
+};
+
+&default_transform {
+    col-offset = <5>;
+};
+
+&kscan0 {
+    /* U1: D10,D9,D8,D7,P0.10 = PCB nets Col0..Col4. */
+    col-gpios
+        = <&xiao_d 10 GPIO_ACTIVE_HIGH>
+        , <&xiao_d 9 GPIO_ACTIVE_HIGH>
+        , <&xiao_d 8 GPIO_ACTIVE_HIGH>
+        , <&xiao_d 7 GPIO_ACTIVE_HIGH>
+        , <&gpio0 10 GPIO_ACTIVE_HIGH>
+        ;
+};
+
+&pinctrl {
+    spi0_default: spi0_default {
+        group1 {
+            /* D5=P0.05 SCLK; D4=P0.04 is shared 3-wire SDIO. */
+            psels = <NRF_PSEL(SPIM_SCK, 0, 5)>,
+                    <NRF_PSEL(SPIM_MOSI, 0, 4)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 4)>;
+        };
+    };
+
+    spi0_sleep: spi0_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 5)>,
+                    <NRF_PSEL(SPIM_MOSI, 0, 4)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 4)>;
+            low-power-enable;
+        };
+    };
+};
+
+&xiao_serial {
+    status = "disabled";
+};
+
+&spi0 {
+    status = "okay";
+    compatible = "nordic,nrf-spim";
+    pinctrl-0 = <&spi0_default>;
+    pinctrl-1 = <&spi0_sleep>;
+    pinctrl-names = "default", "sleep";
+    cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+
+    trackball: trackball@0 {
+        status = "okay";
+        compatible = "cormoran,pmw3610";
+        settings-id = "trackball";
+        reg = <0>;
+        spi-max-frequency = <2000000>;
+        irq-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        /* Counts per inch, 200-3200 in steps of 200. Same value as roBa/moNa2. */
+        cpi = <400>;
+
+        /*
+         * Hold the sensor at the 4ms RUN rate while ZMK activity is ACTIVE,
+         * falling back to normal downshift once ZMK goes IDLE/SLEEP. Without
+         * this the sensor drops to REST1 after RUN_DOWNSHIFT and the first
+         * motion after a pause arrives late and in one lump. Costs standby
+         * current for as long as ZMK stays active (CONFIG_ZMK_IDLE_TIMEOUT,
+         * 30s by default) -- drop this line first if battery life suffers.
+         */
+        force-awake;
+
+        /* Axis defaults are Kconfig-backed and remain editable in DYA Studio. */
+
+        evt-type = <INPUT_EV_REL>;
+        x-input-code = <INPUT_REL_X>;
+        y-input-code = <INPUT_REL_Y>;
+    };
+};
+
+/*
+ * scroll_snap の既定値からの変更点。値の意味は iwmsl/zmk-scroll-snap の
+ * README を参照。ここを触る前提として、モジュールは「require-n-samples に
+ * 達するまでのイベントを出力せずに内部へ溜め、idle-reset-timeout-ms の
+ * 無操作でそれを破棄する」実装になっている。
+ *
+ * immediate-snap-threshold: 溜めている途中でも、軸ごとの累積がこの値を
+ *   超えたら即座に出力を始める。既定1500はscalerで割った後の値(0か1)を
+ *   見ていたため事実上無効で、常に10イベント待ちになっていた。処理順を
+ *   scalerより前へ移したのでここには生カウントが来る。4カウントは
+ *   cpi=400・φ25mm球で約0.25mmの転がり量。小さくつついたときの
+ *   「何も起きない → まとめて飛ぶ」はこの待ちが原因なので、下げるほど
+ *   反応が早くなり、上げるほど方向判定の材料が増える。
+ *
+ * y-threshold: 既定の <1 1> と x-threshold <5 8> の組み合わせでは
+ *   |y/x| が 0.625〜1.0 の入力がどちらの軸にも該当せず、値ごと捨てられて
+ *   いた(斜めに転がし始めたときの無反応)。x-thresholdと同じ比にして
+ *   境界の隙間をなくす。
+ *
+ * lock-for-next-n-events: 0にしてロックを時間ベースだけにする。モジュールの
+ *   実装ではlock-duration-msが非0のときイベント数ロックが減算されないため、
+ *   0以外にすると一度決まった軸が idle-reset まで絶対に変わらない。上の
+ *   immediate-snap-threshold で判定を早める以上、間違えた軸が
+ *   lock-duration-ms(200ms)で戻せることが前提になる。
+ */
+&zip_scroll_snap {
+    immediate-snap-threshold = <4>;
+    y-threshold = <5 8>;
+    lock-for-next-n-events = <0>;
+};
+
+&trackball_listener {
+    status = "okay";
+    device = <&trackball>;
+    input-processors = <&c4mtb_telemetry 0>,
+                       <&mouse_runtime_input_processor>;
+
+    /*
+     * Layer 3 (scroll_layer, held via &lt 3) turns ball motion into wheel
+     * events. A matching layer override returns before the listener's base
+     * processors, so cursor motion is replaced rather than added to.
+     *
+     * 子ノードは宣言順に評価され、最初に一致した override が
+     * process-next なしで打ち切る(ZMKの input_listener.c
+     * filter_with_input_config)。zoomer はレイヤー3を保持したまま入る
+     * レイヤー5なので、必ず scroller より前に置くこと。順序を入れ替えると
+     * ズーム中も通常のスクロールゲインが使われる。
+     *
+     * zip_scroll_transform inverts vertical only: the node declares
+     * y-codes = <INPUT_REL_WHEEL> and x-codes = <INPUT_REL_HWHEEL>, so
+     * Y_INVERT negates wheel events and leaves horizontal wheel alone.
+     * Horizontal is already correct, so X_INVERT is deliberately not set.
+     *
+     * It sits directly after the mapper. Before the mapper the events are
+     * still REL_X/REL_Y, so no code would match and the transform would
+     * silently do nothing.
+     *
+     * scaler は snap の後ろに置く。前に置くと snap へ届く値が除算で 0/1 に
+     * 潰れ、方向判定も immediate-snap-threshold も生の移動量を見られない。
+     * snap が出力待ちで ZMK_INPUT_PROC_STOP を返す間は scaler を素通りするが、
+     * そのとき値は 0 なので落ちる情報はない。
+     *
+     * ゲイン: cpi=400・φ25mm球で 15.75カウント/mm。
+     * CONFIG_ZMK_POINTING_SMOOTH_SCROLLING により 16単位 = 1ノッチなので、
+     *   scroller (1 1): 15.75単位/mm = 1ノッチあたり約1.02mm
+     *     → 以前の <3 2> の約2/3の速度。最小ステップは1/16ノッチを維持。
+     *   zoomer (1 4): 3.9単位/mm = 1ノッチあたり約4.1mm
+     *     → Ctrl+ホイールのズームは1ノッチ=1段でホスト側が離散なので、
+     *       1段出すのに球を4mm転がす設定にして踏み込み量で合わせる。
+     */
+    zoomer {
+        layers = <5>;
+        input-processors = <&zip_xy_to_scroll_mapper>,
+                           <&zip_scroll_transform INPUT_TRANSFORM_Y_INVERT>,
+                           <&c4mtb_telemetry 2>,
+                           <&zip_scroll_snap>,
+                           <&c4mtb_zoom_runtime>;
+    };
+
+    scroller {
+        layers = <3>;
+        input-processors = <&zip_xy_to_scroll_mapper>,
+                           <&zip_scroll_transform INPUT_TRANSFORM_Y_INVERT>,
+                           <&c4mtb_telemetry 1>,
+                           <&zip_scroll_snap>,
+                           <&c4mtb_scroll_runtime>;
+    };
+};

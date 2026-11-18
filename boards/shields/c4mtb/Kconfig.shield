@@ -1,0 +1,5 @@
+config SHIELD_C4MTB_R
+    def_bool $(shields_list_contains,c4mtb_r)
+
+config SHIELD_C4MTB_L
+    def_bool $(shields_list_contains,c4mtb_l)
