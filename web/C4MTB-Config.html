@@ -1,0 +1,2463 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>C4MTB Config</title>
+<style>
+:root{--bg:#141920;--panel:#1c232c;--inner:#161c24;--line:#303b47;--text:#eef1f5;--dim:#abb7c6;--accent:#d5f486;--accent-ink:#1e290c;--focus:#e6ffab;--error:#ffb4ab;--radius:15px;font-family:"Segoe UI","Hiragino Sans","Yu Gothic UI","Noto Sans CJK JP",sans-serif;font-synthesis:none;color:var(--text);background:var(--bg)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+button,input,select{font:inherit}
+button,a,input,select,summary{outline-offset:4px}
+:focus-visible{outline:2px solid var(--focus)}
+button{cursor:pointer}
+a{color:var(--accent)}
+button:disabled,input:disabled,select:disabled{cursor:not-allowed;opacity:.42}
+h1,h2,h3,p{margin:0}
+p{line-height:1.65}
+.topbar{border-bottom:1px solid #2a343f;background:#171e26}
+.header-inner,.frame{max-width:1280px;padding:0 36px;margin:0 auto}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:72px;gap:16px}
+.brand{display:inline-flex;align-items:center;gap:11px;color:var(--text);text-decoration:none;font:800 19px/1 system-ui,sans-serif;letter-spacing:.04em;white-space:nowrap}
+.brand em{font:600 13px/1 ui-monospace,monospace;letter-spacing:.07em;color:var(--dim);font-style:normal}
+.brand-icon{display:grid;grid-template-columns:repeat(2,6px);grid-template-rows:repeat(2,6px);gap:3px;transform:rotate(-12deg);padding:4px}
+.brand-icon i{border:1px solid var(--accent);border-radius:2px}
+.brand-icon i:last-child{background:var(--accent)}
+.connection,.footer-actions,.editor-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+#connection-status{font-size:13px;color:var(--dim);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+#connection-status i{width:8px;height:8px;border-radius:50%;background:#7a8798}
+#connection-status[data-state="active"] i{background:var(--accent)}
+#connection-status[data-state="locked"] i{background:#f8c982}
+.button{display:inline-flex;justify-content:center;align-items:center;border:1px solid transparent;min-height:40px;padding:8px 13px;border-radius:8px;font-size:13px;line-height:1.35;font-weight:650;text-decoration:none;color:var(--text);white-space:nowrap;background:transparent}
+.button.primary{background:var(--accent);color:var(--accent-ink)}
+.button.primary:not(:disabled):hover{background:#e6ffad}
+.button.subtle{background:#232d38;border-color:#394655}
+.button.subtle:not(:disabled):hover{background:#2b3846}
+.button.text-button{color:var(--dim);padding:6px 3px;text-decoration:underline;text-underline-offset:3px}
+.intro{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:38px 0 25px}
+h1{font-size:clamp(1.65rem,4vw,2.3rem);line-height:1.2;letter-spacing:-.035em}
+.intro p{color:var(--dim);font-size:14px;margin-top:10px}
+.import{position:relative;cursor:pointer}
+.import:focus-within{outline:2px solid var(--focus);outline-offset:4px}
+.import input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.alert,.callout{border:1px solid #465a42;background:#222e26;border-radius:10px;padding:12px 16px;margin-bottom:15px;font-size:13px;line-height:1.55}
+.alert[data-kind="error"]{color:var(--error);border-color:#754944;background:#382727}
+.callout{background:#242b37;border-color:#48546a;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.callout p{color:var(--dim);margin-top:4px}
+kbd,code{font-family:ui-monospace,"Cascadia Code",monospace;font-size:.91em;border-radius:4px;background:#121820;padding:1px 4px;color:#e2ead7}
+.tabs,.layers{display:flex;flex-wrap:wrap;gap:8px}
+.tabs{border-bottom:1px solid var(--line);padding:0 0 1px;margin-bottom:18px;gap:23px}
+.tabs a{padding:11px 4px 12px;border-bottom:2px solid transparent;color:var(--dim);font-size:14px;font-weight:650;text-decoration:none}
+.tabs a[aria-current]{border-color:var(--accent);color:var(--accent)}
+.workbench{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,310px);gap:16px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;min-width:0}
+.section-head{display:flex;align-items:start;justify-content:space-between;gap:10px;margin-bottom:18px}
+.section-head p,.subsection p,.directions p{color:var(--dim);font-size:13px;margin-top:4px}
+h2{font-size:1.1rem;line-height:1.35}
+h3{font-size:.94rem}
+.small-select{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
+.small-select select{width:auto}
+.layers button{background:none;min-height:34px;border:1px solid var(--line);color:var(--dim);font-size:12px;border-radius:7px;padding:7px 10px;white-space:nowrap}
+.layers button[aria-pressed="true"]{color:var(--accent);background:#2e3928;border-color:#687c4e}
+.keyboard-scroll{overflow:auto;padding-bottom:6px;margin:15px -3px 0}
+.keyboard{margin:auto;position:relative;width:100%;min-width:424px;max-width:690px;aspect-ratio:2.8}
+.key{position:absolute;display:grid;place-items:center;text-align:center;line-height:1.1;background:linear-gradient(#343f4e,#2b3440);border:1px solid #505e70;border-bottom:3px solid #1c242f;border-radius:8px;color:#ebf0f6;font-size:clamp(10px,1.08vw,14px);font-weight:650;padding:3px;overflow:hidden;overflow-wrap:anywhere;box-shadow:0 1px 2px #1118}
+.key:hover:not(:disabled){border-color:#a0b0c5;background:#46566a}
+.key[aria-pressed="true"]{background:var(--accent);border-color:#a7c366;color:var(--accent-ink)}
+.key[data-change="true"]:not([aria-pressed="true"]){box-shadow:inset 0 0 0 1px var(--accent)}
+.key[data-ghost="true"]:not([aria-pressed="true"]){color:#96a4b6}
+.keyboard .ball{position:absolute;left:81.6%;top:71%;width:8%;aspect-ratio:1;border:1px solid #405064;border-radius:50%;background:radial-gradient(circle at 36% 30%,#42576a,#24323e 58%,#17202c 78%);pointer-events:none}
+.test-line{margin-top:13px;border-top:1px solid var(--line);padding-top:15px;display:flex;gap:10px;align-items:center;font-size:13px;color:var(--dim)}
+.test-line input{flex:1}
+input[type=text],input[type=number],select{border:1px solid #465565;border-radius:8px;background:var(--inner);padding:9px 10px;color:var(--text);width:100%;min-width:0;min-height:39px}
+input::placeholder{color:#93a1b2}
+.field{display:block;margin-bottom:14px}
+.field>span,.combo-layers legend{display:block;font-size:12px;color:var(--dim);font-weight:650;margin-bottom:6px}
+#key-binding,#combo-binding,#combo-name{font-family:ui-monospace,"Cascadia Code",monospace;font-size:14px}
+.hint{font-size:12px;color:var(--dim);margin:10px 0}
+.editor-actions{margin-top:17px}
+.combo-list{display:grid;gap:7px}
+.combo-item{display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:8px;border:1px solid #394656;background:#202a34;color:var(--text);font-size:13px;text-align:left;padding:9px 11px}
+.combo-item[aria-pressed=true]{border-color:#799751;background:#2a3628}
+.combo-item strong{font-size:.91em;overflow-wrap:anywhere}
+.combo-item span{font-size:12px;color:var(--dim);text-align:right;overflow-wrap:anywhere}
+.subsection{margin:20px 0 0}
+.number-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.combo-layers{border:1px solid var(--line);margin:0 0 12px;border-radius:8px;padding:8px}
+#combo-layers{display:flex;flex-wrap:wrap;gap:8px}
+.combo-layers small{font-size:11px;color:var(--dim)}
+.check{display:inline-flex;align-items:center;gap:6px;color:var(--dim);font-size:12px}
+input[type=checkbox],input[type=range]{accent-color:#cbea7c}
+.check input{width:16px;height:16px;margin:0}
+.slider{padding:13px 0 16px;border-top:1px solid var(--line)}
+.slider-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.slider-head output{font:700 20px/1 ui-monospace,monospace;color:var(--accent)}
+.slider p{font-size:12px;color:var(--dim);margin-top:4px}
+.slider input[type=range]{display:block;width:100%;margin:12px 0 7px;}
+.slider-ends{display:flex;justify-content:space-between;color:var(--dim);font-size:11px}
+.directions{border-top:1px solid var(--line);padding-top:13px;display:flex;flex-wrap:wrap;align-items:center;gap:13px}
+.directions>div{margin-right:auto}
+.pointer-test{height:114px;position:relative;display:grid;place-items:center;overflow:hidden;border:1px dashed #56677a;border-radius:9px;background:repeating-linear-gradient(90deg,#1b2530 0,#1b2530 15px,#202b37 16px)}
+.pointer-test i{display:block;width:42px;height:42px;border:1px solid var(--accent);border-radius:50%;box-shadow:0 0 0 7px #d5f48620;pointer-events:none}
+.pointer-test span{font:600 11px ui-monospace,monospace;position:absolute;bottom:8px;right:8px;color:var(--dim)}
+.scroll-test{display:block;position:relative;height:83px;margin-top:10px;overflow:scroll;background:#17212b;border:1px solid #3f4e5f;border-radius:8px;overscroll-behavior:contain}
+.scroll-test span{display:block;width:620px;height:280px;padding:12px;color:var(--dim);font-size:12px;background:repeating-linear-gradient(115deg,#202a35 0,#202a35 12px,#263341 12px,#263341 13px)}
+.source-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;padding:15px 0;border-top:1px solid var(--line)}
+.source-footer strong{font-size:13px}
+.source-footer p,.help{font-size:12px;color:var(--dim)}
+.help{margin:0 0 32px;max-width:80ch}
+.help summary{cursor:pointer;margin-bottom:8px}
+.help p+p{margin-top:7px}
+@media(max-width:880px){.header-inner,.frame{padding:0 23px}.workbench{grid-template-columns:minmax(0,1fr)}.keyboard{max-width:650px}.editor-card{max-width:none}.combo-workbench{align-items:stretch}}
+@media(max-width:550px){.frame,.header-inner{padding:0 14px}.header-inner{height:62px}.brand em{display:none}.brand{font-size:16px;gap:5px}.intro{padding:26px 0 17px;align-items:flex-start;flex-wrap:wrap}.card{padding:15px}.source-footer{flex-wrap:wrap}.test-line label{display:none}.tabs{gap:14px}.tabs a{font-size:13px}.callout{flex-wrap:wrap}.keyboard-scroll{margin-inline:-6px}.small-select{display:block}.small-select select{max-width:128px}}
+
+#key-grid{max-width:790px}.keyboard-card{background:linear-gradient(145deg,#243638,#18232a 70%)}.card{box-shadow:0 10px 32px #0002}.keyboard-scroll{border-block:1px solid #405254;padding-block:14px}.key small{font-size:.7em;align-self:start}.key[data-hit=true],.layers button[data-hit=true]{outline:2px dashed #8bd6de;outline-offset:-3px}.key[data-change=true]::after{content:"";position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#ffbc71}#matches{max-height:145px;overflow:auto;display:grid;gap:4px;margin-bottom:10px}#matches button{text-align:left;padding:7px;color:var(--text);background:#263b40;border:1px solid #496468;border-radius:6px}#role{font-weight:700;font-size:1.15rem}#related,#status-detail{font-size:.84rem;white-space:pre-line;color:var(--dim);margin:7px 0 15px}#save-state{border-left:3px solid var(--accent);padding-left:10px}#save-state[data-pending=true]{border-color:#ffbc71}</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="header-inner">
+    <a class="brand" href="#keymap" aria-label="C4MTB Config キーマップ">
+      <span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span>C4MTB <em>CONFIG</em></span>
+    </a>
+    <div class="connection">
+      <span id="connection-status" data-state="offline"><i></i><span>未接続</span></span>
+      <button id="connect" class="button primary">USBで接続</button>
+    </div>
+  </div>
+</header>
+<main class="frame">
+  <div class="intro">
+    <div><h1>C4MTB 設定</h1><p id="intro-text">キー配列、コンボ、トラックボールを調整できます。</p></div>
+    <label class="button subtle import">設定ファイルを開く<input id="import" type="file" accept=".keymap,.dts,.txt"></label>
+  </div>
+  <div id="alert" class="alert" role="status" aria-live="polite" hidden></div>
+  <aside id="unlock" class="callout" hidden>
+    <div><strong>キーボードでStudioロックを解除</strong>
+    <p>左右の内側の拡張キーを同時に押したまま、<kbd>Y</kbd> を押してください。現行の配列では拡張キーは左 <kbd>Ctrl</kbd> と右 <kbd>Alt</kbd> の位置です。</p></div>
+    <button class="button subtle" id="check-lock">接続状態を確認</button>
+  </aside>
+  <nav class="tabs" aria-label="設定の種類">
+    <a href="#keymap" data-tab="keymap" aria-current="page">キーマップ</a>
+    <a href="#combos" data-tab="combos">コンボ</a>
+    <a href="#trackball" data-tab="trackball">トラックボール</a>
+  </nav>
+  <section id="keymap-panel" class="tab-panel">
+    <div class="workbench">
+      <div class="card keyboard-card">
+        <div class="section-head">
+          <div><h2>キー配列</h2><p id="keymap-note">キーを選ぶと割り当てを編集できます。</p></div>
+          <label id="keymap-mode-wrap" class="small-select" hidden><span>編集先</span><select id="keymap-mode"><option value="device">USB接続中の本体</option><option value="file">設定ファイル</option></select></label>
+        </div>
+        <label class="field"><span>動作から探す</span><input id="lookup" type="text" placeholder="左クリック、Shift＋Tab、スクロール…" autocomplete="off"></label><div id="matches"></div><div class="layers" id="layer-buttons" aria-label="レイヤー"></div>
+        <div class="keyboard-scroll"><div class="keyboard" id="key-grid" aria-label="C4MTBの38キー"></div></div>
+        <div class="test-line"><label for="key-test">入力テスト</label><input id="key-test" type="text" autocomplete="off" spellcheck="false" placeholder="キーを押して、ここで入力を確認"><button class="button subtle" id="clear-test">消去</button></div>
+      </div>
+      <div class="card editor-card">
+        <div class="section-head"><div><h2>キーの割り当て</h2><p id="key-caption"></p></div></div>
+        <p id="role"></p><p id="related"></p><label class="field"><span>動作</span><select id="key-presets"></select></label>
+        <label class="field"><span>ZMKの割り当て</span><input id="key-binding" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="&amp;kp TAB"></label>
+        <p class="hint">例 <code>&amp;kp LS(TAB)</code> で Shift + Tab。<code>&amp;lt 3 K</code> でタップ時は K、長押し時はスクロールレイヤー。</p>
+        <div class="editor-actions">
+          <div id="save-state" style="width:100%"><strong id="stage" role="status"></strong><div id="status-detail"></div></div><button class="button primary" id="apply-key">割り当てを変更</button>
+          <button class="button subtle" id="save-keys" hidden>本体に保存</button>
+          <button class="button text-button" id="undo-keys" hidden>本体の変更を取り消す</button>
+        </div>
+        <p class="hint" id="key-context"></p>
+      </div>
+    </div>
+  </section>
+  <section id="combos-panel" class="tab-panel" hidden>
+    <div class="workbench combo-workbench">
+      <div class="card keyboard-card">
+        <div class="section-head"><div><h2>コンボ</h2><p id="combo-note">同時押しするキーを配列から選べます。</p></div>
+          <div class="footer-actions">
+            <label class="small-select" id="combo-mode-wrap" hidden><span>編集先</span><select id="combo-mode"><option value="device">USB接続中の本体</option><option value="file">設定ファイル</option></select></label>
+            <button class="button subtle" id="add-combo">＋ コンボを追加</button>
+          </div>
+        </div>
+        <div id="combo-list" class="combo-list"></div>
+        <div class="subsection"><h3>同時押しするキー</h3><p>選択中のキーは色が変わります。</p></div>
+        <div class="keyboard-scroll"><div class="keyboard" id="combo-grid" aria-label="コンボで使用するキー"></div></div>
+      </div>
+      <form class="card editor-card" id="combo-form" novalidate>
+        <div class="section-head"><div><h2>コンボの編集</h2><p id="combo-caption"></p></div></div>
+        <label class="field"><span>名前</span><input id="combo-name" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" required></label>
+        <label class="field"><span>動作</span><select id="combo-presets"></select></label>
+        <label class="field"><span>ZMKの割り当て</span><input id="combo-binding" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" required placeholder="&amp;kp LS(TAB)"></label>
+        <div class="number-fields">
+          <label class="field"><span>同時押しの猶予 (ms)</span><input id="combo-timeout" type="number" min="1" max="5000" required></label>
+          <label class="field"><span>直前の入力間隔 (ms)</span><input id="combo-idle" type="number" min="0" max="5000" required></label>
+        </div>
+        <fieldset class="combo-layers"><legend>有効なレイヤー</legend><div id="combo-layers"></div><small>選択なしで全レイヤー。</small></fieldset>
+        <label class="check" id="combo-slow-wrap"><input id="combo-slow" type="checkbox"> 全キーが離れるまで動作を保持</label>
+        <label class="field" id="combo-release-wrap" hidden><span>動作を解除するタイミング</span><select id="combo-release"><option value="0">本体の共通設定を使用</option><option value="1">全キーが離れたとき</option><option value="2">いずれかのキーが離れたとき</option></select></label>
+        <div class="editor-actions"><button class="button primary" id="apply-combo" type="submit">ファイルに反映</button><button class="button text-button" id="delete-combo" type="button">削除</button></div>
+        <p class="hint" id="combo-context">書き出した設定を使ってファームウェアを更新すると、本体のコンボに反映されます。</p>
+      </form>
+    </div>
+  </section>
+  <section id="trackball-panel" class="tab-panel" hidden>
+    <div class="workbench">
+      <div class="card keyboard-card">
+        <div class="section-head">
+          <div><h2>トラックボール</h2><p id="pointer-note">接続前は標準値を表示しています。</p></div>
+          <button id="demo" class="button subtle">デモで試す</button>
+        </div>
+        <div id="sliders"></div>
+        <div class="directions">
+          <div><h3>スクロール方向</h3><p>ファームウェアの標準方向を基準に反転します。</p></div>
+          <label class="check"><input type="checkbox" id="invert-y"> 縦を反転</label>
+          <label class="check"><input type="checkbox" id="invert-x"> 横を反転</label>
+        </div>
+        <div class="editor-actions">
+          <button id="try-pointer" class="button subtle">実機で試す</button>
+          <button id="save-pointer" class="button primary">本体に保存</button>
+          <button id="undo-pointer" class="button text-button">読み込み時の値に戻す</button>
+        </div>
+      </div>
+      <div class="card editor-card">
+        <div class="section-head"><div><h2>操作テスト</h2><p>ボールを動かして感触を確認できます。</p></div></div>
+        <div class="pointer-test" id="pointer-test" tabindex="0" aria-label="ポインターとズームのテスト領域"><i id="target"></i><span id="test-scale">100%</span></div>
+        <div id="test-scroll" class="scroll-test" tabindex="0" aria-label="縦横スクロールのテスト領域"><span>縦・横スクロール</span></div>
+        <p class="hint">点線の領域では Ctrl + ホイールでズームを試せます。</p>
+      </div>
+    </div>
+  </section>
+  <footer id="source-footer" class="source-footer">
+    <div><strong id="source-name">同梱の C4MTB 設定</strong><p id="source-status"></p></div>
+    <div class="footer-actions"><a class="button subtle" href="https://github.com/iwmsl/c4mtb-keymap/actions/workflows/build.yml" target="_blank" rel="noopener noreferrer">ファームウェアビルド ↗</a>
+      <button id="download" class="button primary">.keymap を書き出す</button></div>
+  </footer>
+  <details class="help" id="help">
+    <summary>USB接続とファームウェアの更新方法</summary>
+    <p>WindowsのChromeまたはEdgeで、HTTPSのURLかダウンロードしたHTMLを開きます。右手側をデータ通信対応のUSBケーブルでつなぎ、以前に使っていた設定アプリを閉じてから「USBで接続」を押してください。</p>
+    <p>ファイルで編集した設定は、書き出した <code>c4mtb.keymap</code> を GitHub の <a href="https://github.com/iwmsl/c4mtb-keymap/blob/main/config/c4mtb.keymap" target="_blank" rel="noopener noreferrer">config/c4mtb.keymap</a> に反映し、Actions が生成した通常版の <code>c4mtb_R.uf2</code> を右手側に書き込みます。右手側のブートローダーはリセットボタンの2回押しで起動できます。</p>
+    <p>USBでコンボを編集するには、右手側にコンボ対応版の <code>c4mtb_R_usb_combos.uf2</code> を一度書き込みます。USB編集で保存したコンボは、本体で使う設定です。</p>
+    <p>本体のキーマップをUSBで保存したことがある場合、ファームウェアの既定配列よりUSBで保存した割り当てが優先されます。コンボだけ編集する場合は、GitHub上の最新の .keymap を開いて編集すると、ファイル側のキー割り当ても引き継げます。</p>
+  </details>
+</main>
+<script>
+const stockSource = "#include <behaviors.dtsi>\n#include <dt-bindings/zmk/bt.h>\n#include <dt-bindings/zmk/keys.h>\n#include <dt-bindings/zmk/pointing.h>\n\n&mt {\n    flavor = \"tap-preferred\";\n    quick-tap-ms = <200>;\n};\n\n&lt { quick-tap-ms = <200>; };\n\n/ {\n    behaviors {\n        cursor_speed: cursor_speed {\n            compatible = \"c4mtb,behavior-cursor-speed\";\n            display-name = \"Cursor Speed\";\n            #binding-cells = <0>;\n        };\n    };\n\n    macros {\n        /*\n         * ボールでズームするためのレイヤー。押している間だけ LCTRL を保持し、\n         * 同時にレイヤー5へ入る。レイヤー5では c4mtb_r.overlay の zoomer が\n         * ホイールのゲインを1/8へ落とすので、Ctrl+ホイールのズームが\n         * 「球を約4mm転がして1段」になる。\n         *\n         * ZMKにはモディファイア保持とレイヤー保持を1つにする振る舞いがないので\n         * マクロで束ねる。macro_pause_for_release があるため、押し下げで\n         * &kp LCTRL と &mo 5 の両方が押され、キーを離すと両方が離れる。\n         */\n\n        zoom_ball: zoom_ball {\n            compatible = \"zmk,behavior-macro\";\n            #binding-cells = <0>;\n            wait-ms = <0>;\n            tap-ms = <0>;\n            bindings =\n                <&macro_press>,\n                <&kp LCTRL &mo 5>,\n                <&macro_pause_for_release>,\n                <&macro_release>,\n                <&kp LCTRL &mo 5>;\n        };\n    };\n\n    /*\n     * Combos stay in standard ZMK devicetree so Keymap Editor can parse,\n     * display, and edit them without depending on DYA runtime-combo state.\n     * Recovery controls and click chords therefore remain available even if\n     * Studio settings are reset or Studio itself is unavailable.\n     */\n\n    combos {\n        compatible = \"zmk,combos\";\n\n        settings_layer {\n            timeout-ms = <80>;\n            key-positions = <33 34>;\n            bindings = <&mo 4>;\n        };\n\n        left_click {\n            key-positions = <16 17>;\n            bindings = <&mkp LCLK>;\n            timeout-ms = <90>;\n        };\n\n        right_click {\n            key-positions = <17 18>;\n            bindings = <&mkp RCLK>;\n            timeout-ms = <90>;\n        };\n        tab_shift_combo {\n            timeout-ms = <50>;\n            key-positions = <13 14>;\n            bindings = <&kp LS(TAB)>;\n        };\n        tab_combo {\n            timeout-ms = <50>;\n            key-positions = <3 4>;\n            bindings = <&kp TAB>;\n        };\n    };\n\n    keymap {\n        compatible = \"zmk,keymap\";\n\n        default_layer {\n            bindings = <\n&kp Q             &mt LEFT_WIN W      &kp E         &kp R        &kp T    &kp Y         &kp U        &kp I            &kp O             &kp P\n&mt LCTRL A       &mt LEFT_ALT S      &mt LSHIFT D  &kp F        &kp G    &kp H         &kp J        &lt 3 K          &mt LEFT_ALT L    &mt LCTRL MINUS\n&mt LEFT_SHIFT Z  &mt LEFT_ALT X      &kp C         &kp V        &kp B    &kp N         &kp M        &kp COMMA        &mt LEFT_ALT DOT  &mt LEFT_SHIFT SLASH\n                  &lt 3 INT_MUHENKAN  &lt 2 DEL     &lt 1 SPACE  &kp  LCTRL  &kp LEFT_ALT  &lt 1 ENTER  &lt 2 BACKSPACE                    &lt 5 INT_HENKAN\n            >;\n        };\n\n        number_layer {\n            bindings = <\n&kp PAGE_UP    &kp LS(F10)     &kp UP              &mkp LCLK            &mkp RCLK   &kp NUMBER_7  &kp NUMBER_8  &kp NUMBER_9  &kp KP_MINUS   &kp KP_SLASH\n&kp PAGE_DOWN  &kp LEFT_ARROW  &kp DOWN_ARROW      &kp RIGHT            &kp F6      &kp NUMBER_4  &kp NUMBER_5  &kp NUMBER_6  &kp KP_PLUS    &kp KP_MULTIPLY\n&kp HOME       &kp END         &kp LA(LEFT_ARROW)  &kp LA(RIGHT_ARROW)  &kp LS(F6)  &kp NUMBER_1  &kp NUMBER_2  &kp NUMBER_3  &kp LS(MINUS)  &trans\n               &trans          &trans              &trans               &kp ESCAPE  &kp COMMA     &trans        &kp NUMBER_0                 &kp PERIOD\n            >;\n        };\n\n        navigation_layer {\n            bindings = <\n&kp LC(PAGE_UP)    &trans              &kp LG(UP)          &trans               &kp LS(COMMA)      &kp LS(PERIOD)    &kp LS(NUMBER_2)  &kp LS(NUMBER_3)  &kp LS(NUMBER_4)  &kp LS(NUMBER_6)\n&kp LC(PAGE_DOWN)  &kp LG(LEFT_ARROW)  &kp LG(DOWN_ARROW)  &kp LG(RIGHT_ARROW)  &kp RIGHT_BRACKET  &kp BACKSLASH     &kp LS(NUMBER_7)  &kp SEMICOLON     &kp SQT           &kp LS(SEMICOLON)\n&kp LS(HOME)       &kp LS(END)         &kp LC(Z)           &kp LC(Y)            &kp LS(N8)         &kp LS(NUMBER_9)  &kp LS(NUMBER_1)  &kp LS(SLASH)     &kp LS(NUMBER_5)  &kp LS(INT_RO)\n                   &trans              &trans              &trans               &kp LA(F4)         &kp LEFT_BRACKET  &trans            &trans                              &trans\n            >;\n        };\n\n        /*\n         * Layer 3. Held via &lt 3 on the left outer thumb / right corner key.\n         * The trackball scrolls instead of moving the cursor while this layer\n         * is active (see the scroller override in c4mtb_r.overlay).\n         *\n         * &msc の引数は単位/秒。CONFIG_ZMK_POINTING_SMOOTH_SCROLLING により\n         * 1ノッチ = 16単位になったので、以前の MOVE_Y(5)(=5ノッチ/秒)と同じ\n         * 速さは MOVE_Y(80) になる。有効化前の値のままだと1/16の速度で\n         * 「効かない」ように見える。\n         *\n         * 左内側の拡張キー(位置33、ベースはTAB)は &zoom_ball。左親指でこの\n         * レイヤーを保持したまま左人差し指で押し、右手はボールに置いたまま\n         * ズームできる位置を選んだ。位置33は settings_layer コンボ(33+34)の\n         * 片側でもあるため、単押しの確定はコンボのtimeout-ms(80ms)ぶん遅れる。\n         * 押してから転がすぶんには問題ないが、気になるならコンボを持たない\n         * 位置4(ベースはT)へ移す。\n         */\n\n        scroll_layer {\n            bindings = <\n&kp F1  &kp F2   &kp F3   &kp F4   &trans         &msc MOVE_Y(80)   &trans              &trans               &trans    &trans\n&kp F5  &kp F6   &kp F7   &kp F8   &kp LA(LS(B))  &msc MOVE_Y(-80)  &mkp MB1            &trans               &mkp MB2  &trans\n&kp F9  &kp F10  &kp F11  &kp F12  &kp LG(LC(S))  &trans            &kp LA(LEFT_ARROW)  &kp LA(RIGHT_ARROW)  &trans    &trans\n        &trans   &trans   &trans   &trans         &trans            &trans              &trans                         &trans\n            >;\n        };\n\n        /* Layer 4. Entered by the combo on both inner extension keys. */\n\n        settings_layer {\n            bindings = <\n&bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4  &studio_unlock  &cursor_speed  &trans  &trans  &bt BT_CLR\n&trans        &trans        &trans        &trans        &trans        &trans          &trans  &trans  &trans      &bt BT_CLR_ALL\n&bootloader   &sys_reset    &trans        &trans        &trans        &trans          &trans  &trans  &sys_reset  &bootloader\n              &trans        &trans        &trans        &trans        &trans          &trans  &trans              &trans\n            >;\n        };\n\n        /*\n         * Layer 5. Entered only from &zoom_ball on layer 3, which holds LCTRL\n         * for as long as the key is down. キー自体に割り当てはなく、\n         * c4mtb_r.overlay の zoomer(レイヤー5)がボールのホイールゲインを\n         * 落とすためだけに存在する。押している間はレイヤー3も生きているので\n         * 全キーを &trans にしてレイヤー3へ落とす。\n         */\n\n        zoom_layer {\n            bindings = <\n&trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans\n&trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans\n&trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans\n        &trans  &trans  &trans  &trans  &trans  &trans  &trans          &trans\n            >;\n        };\n    };\n};\n";
+const layout = [{"row": 0, "col": 0, "x": 0, "y": 0.38}, {"row": 0, "col": 1, "x": 1, "y": 0.13}, {"row": 0, "col": 2, "x": 2, "y": 0}, {"row": 0, "col": 3, "x": 3, "y": 0.13}, {"row": 0, "col": 4, "x": 4, "y": 0.25}, {"row": 0, "col": 5, "x": 7, "y": 0.25}, {"row": 0, "col": 6, "x": 8, "y": 0.13}, {"row": 0, "col": 7, "x": 9, "y": 0}, {"row": 0, "col": 8, "x": 10, "y": 0.13}, {"row": 0, "col": 9, "x": 11, "y": 0.38}, {"row": 1, "col": 0, "x": 0, "y": 1.38}, {"row": 1, "col": 1, "x": 1, "y": 1.13}, {"row": 1, "col": 2, "x": 2, "y": 1}, {"row": 1, "col": 3, "x": 3, "y": 1.13}, {"row": 1, "col": 4, "x": 4, "y": 1.25}, {"row": 1, "col": 5, "x": 7, "y": 1.25}, {"row": 1, "col": 6, "x": 8, "y": 1.13}, {"row": 1, "col": 7, "x": 9, "y": 1}, {"row": 1, "col": 8, "x": 10, "y": 1.13}, {"row": 1, "col": 9, "x": 11, "y": 1.38}, {"row": 2, "col": 0, "x": 0, "y": 2.38}, {"row": 2, "col": 1, "x": 1, "y": 2.13}, {"row": 2, "col": 2, "x": 2, "y": 2}, {"row": 2, "col": 3, "x": 3, "y": 2.13}, {"row": 2, "col": 4, "x": 4, "y": 2.25}, {"row": 2, "col": 5, "x": 7, "y": 2.25}, {"row": 2, "col": 6, "x": 8, "y": 2.13}, {"row": 2, "col": 7, "x": 9, "y": 2}, {"row": 2, "col": 8, "x": 10, "y": 2.13}, {"row": 2, "col": 9, "x": 11, "y": 2.38}, {"row": 3, "col": 1, "x": 2.5, "y": 3.25}, {"row": 3, "col": 2, "x": 3.59, "y": 3.36, "r": 11.94, "rx": 4.09, "ry": 3.86}, {"row": 3, "col": 3, "x": 4.49, "y": 3.47, "r": -66.12, "rx": 5.24, "ry": 3.97, "u": 1.5}, {"row": 3, "col": 4, "x": 5, "y": 1.75}, {"row": 3, "col": 5, "x": 6, "y": 1.75}, {"row": 3, "col": 6, "x": 6.01, "y": 3.47, "r": 66.12, "rx": 6.76, "ry": 3.97, "u": 1.5}, {"row": 3, "col": 7, "x": 7.41, "y": 3.36, "r": -11.94, "rx": 7.91, "ry": 3.86}, {"row": 3, "col": 9, "x": 11, "y": 3.38}];
+const keyCodes = {"SYSTEM_POWER": 65665, "SYS_PWR": 65665, "SYSTEM_SLEEP": 65666, "SYS_SLEEP": 65666, "SYSTEM_WAKE_UP": 65667, "SYS_WAKE": 65667, "A": 458756, "B": 458757, "C": 458758, "D": 458759, "E": 458760, "F": 458761, "G": 458762, "H": 458763, "I": 458764, "J": 458765, "K": 458766, "L": 458767, "M": 458768, "N": 458769, "O": 458770, "P": 458771, "Q": 458772, "R": 458773, "S": 458774, "T": 458775, "U": 458776, "V": 458777, "W": 458778, "X": 458779, "Y": 458780, "Z": 458781, "NUMBER_1": 458782, "N1": 458782, "NUM_1": 458782, "EXCLAMATION": 34013214, "EXCL": 34013214, "BANG": 34013214, "NUMBER_2": 458783, "N2": 458783, "NUM_2": 458783, "AT_SIGN": 34013215, "AT": 34013215, "ATSN": 34013215, "NUMBER_3": 458784, "N3": 458784, "NUM_3": 458784, "HASH": 34013216, "POUND": 34013216, "NUMBER_4": 458785, "N4": 458785, "NUM_4": 458785, "DOLLAR": 34013217, "DLLR": 34013217, "NUMBER_5": 458786, "N5": 458786, "NUM_5": 458786, "PERCENT": 34013218, "PRCNT": 34013218, "PRCT": 34013218, "NUMBER_6": 458787, "N6": 458787, "NUM_6": 458787, "CARET": 34013219, "CRRT": 34013219, "NUMBER_7": 458788, "N7": 458788, "NUM_7": 458788, "AMPERSAND": 34013220, "AMPS": 34013220, "NUMBER_8": 458789, "N8": 458789, "NUM_8": 458789, "ASTERISK": 34013221, "ASTRK": 34013221, "STAR": 34013221, "NUMBER_9": 458790, "N9": 458790, "NUM_9": 458790, "LPAR": 34013222, "LPRN": 34013222, "NUMBER_0": 458791, "N0": 458791, "NUM_0": 458791, "RPAR": 34013223, "RPRN": 34013223, "RETURN": 458792, "ENTER": 458792, "RET": 458792, "ESCAPE": 458793, "ESC": 458793, "BACKSPACE": 458794, "BSPC": 458794, "BKSP": 458794, "TAB": 458795, "SPACE": 458796, "SPC": 458796, "MINUS": 458797, "UNDERSCORE": 34013229, "UNDER": 34013229, "EQUAL": 458798, "EQL": 458798, "PLUS": 34013230, "LBKT": 458799, "LBRC": 34013231, "LCUR": 34013231, "RBKT": 458800, "RBRC": 34013232, "RCUR": 34013232, "BACKSLASH": 458801, "BSLH": 458801, "PIPE": 34013233, "NON_US_HASH": 458802, "NUHS": 458802, "TILDE2": 34013234, "SEMICOLON": 458803, "SEMI": 458803, "SCLN": 458803, "COLON": 34013235, "COLN": 34013235, "SINGLE_QUOTE": 458804, "SQT": 458804, "APOSTROPHE": 458804, "APOS": 458804, "QUOT": 458804, "DQT": 34013236, "GRAVE": 458805, "GRAV": 458805, "TILDE": 34013237, "TILD": 34013237, "COMMA": 458806, "CMMA": 458806, "LESS_THAN": 34013238, "LT": 34013238, "LABT": 34013238, "PERIOD": 458807, "DOT": 458807, "GT": 34013239, "RABT": 34013239, "SLASH": 458808, "FSLH": 458808, "QUESTION": 34013240, "QMARK": 34013240, "CAPSLOCK": 458809, "CAPS": 458809, "CLCK": 458809, "F1": 458810, "F2": 458811, "F3": 458812, "F4": 458813, "F5": 458814, "F6": 458815, "F7": 458816, "F8": 458817, "F9": 458818, "F10": 458819, "F11": 458820, "F12": 458821, "PRINTSCREEN": 458822, "PSCRN": 458822, "PRSC": 458822, "SCROLLLOCK": 458823, "SLCK": 458823, "SCLK": 458823, "PAUSE_BREAK": 458824, "PAUS": 458824, "INSERT": 458825, "INS": 458825, "HOME": 458826, "PAGE_UP": 458827, "PG_UP": 458827, "PGUP": 458827, "DELETE": 458828, "DEL": 458828, "END": 458829, "PAGE_DOWN": 458830, "PG_DN": 458830, "PGDN": 458830, "RIGHT_ARROW": 458831, "RIGHT": 458831, "RARW": 458831, "LEFT_ARROW": 458832, "LEFT": 458832, "LARW": 458832, "DOWN_ARROW": 458833, "DOWN": 458833, "DARW": 458833, "UP_ARROW": 458834, "UP": 458834, "UARW": 458834, "KP_NUMLOCK": 458835, "KP_NUM": 458835, "KP_NLCK": 458835, "CLEAR2": 34013267, "KP_DIVIDE": 458836, "KP_SLASH": 458836, "KDIV": 458836, "KP_MULTIPLY": 458837, "KP_ASTERISK": 458837, "KMLT": 458837, "KP_MINUS": 458838, "KP_SUBTRACT": 458838, "KMIN": 458838, "KP_PLUS": 458839, "KPLS": 458839, "KP_ENTER": 458840, "KP_NUMBER_1": 458841, "KP_N1": 458841, "KP_NUMBER_2": 458842, "KP_N2": 458842, "KP_NUMBER_3": 458843, "KP_N3": 458843, "KP_NUMBER_4": 458844, "KP_N4": 458844, "KP_NUMBER_5": 458845, "KP_N5": 458845, "KP_NUMBER_6": 458846, "KP_N6": 458846, "KP_NUMBER_7": 458847, "KP_N7": 458847, "KP_NUMBER_8": 458848, "KP_N8": 458848, "KP_NUMBER_9": 458849, "KP_N9": 458849, "KP_NUMBER_0": 458850, "KP_N0": 458850, "KP_DOT": 458851, "NON_US_BSLH": 458852, "NUBS": 458852, "PIPE2": 34013284, "K_APPLICATION": 458853, "K_APP": 458853, "K_CONTEXT_MENU": 458853, "K_CMENU": 458853, "GUI": 458853, "K_POWER": 458854, "K_PWR": 458854, "KP_EQUAL": 458855, "F13": 458856, "F14": 458857, "F15": 458858, "F16": 458859, "F17": 458860, "F18": 458861, "F19": 458862, "F20": 458863, "F21": 458864, "F22": 458865, "F23": 458866, "F24": 458867, "K_EXECUTE": 458868, "K_EXEC": 458868, "K_HELP": 458869, "K_MENU": 458870, "K_SELECT": 458871, "K_STOP": 458872, "K_AGAIN": 458873, "K_REDO": 458873, "K_UNDO": 458874, "UNDO": 458874, "K_CUT": 458875, "CUT": 458875, "K_COPY": 458876, "COPY": 458876, "K_PASTE": 458877, "PSTE": 458877, "K_FIND": 458878, "K_MUTE": 458879, "K_VOLUME_UP": 458880, "K_VOL_UP": 458880, "VOLU": 458880, "K_VOLUME_DOWN": 458881, "K_VOL_DN": 458881, "VOLD": 458881, "LOCKING_CAPS": 458882, "LCAPS": 458882, "LOCKING_NUM": 458883, "LNLCK": 458883, "LOCKING_SCROLL": 458884, "LSLCK": 458884, "KP_COMMA": 458885, "KP_EQUAL_AS400": 458886, "INTERNATIONAL_1": 458887, "INT1": 458887, "INT_RO": 458887, "INTERNATIONAL_2": 458888, "INT2": 458888, "INT_KATAKANAHIRAGANA": 458888, "INT_KANA": 458888, "INTERNATIONAL_3": 458889, "INT3": 458889, "INT_YEN": 458889, "INTERNATIONAL_4": 458890, "INT4": 458890, "INT_HENKAN": 458890, "INTERNATIONAL_5": 458891, "INT5": 458891, "INT_MUHENKAN": 458891, "INTERNATIONAL_6": 458892, "INT6": 458892, "INT_KPJPCOMMA": 458892, "INTERNATIONAL_7": 458893, "INT7": 458893, "INTERNATIONAL_8": 458894, "INT8": 458894, "INTERNATIONAL_9": 458895, "INT9": 458895, "LANGUAGE_1": 458896, "LANG1": 458896, "LANG_HANGEUL": 458896, "LANGUAGE_2": 458897, "LANG2": 458897, "LANG_HANJA": 458897, "LANGUAGE_3": 458898, "LANG3": 458898, "LANG_KATAKANA": 458898, "LANGUAGE_4": 458899, "LANG4": 458899, "LANG_HIRAGANA": 458899, "LANGUAGE_5": 458900, "LANG5": 458900, "LANG_ZENKAKUHANKAKU": 458900, "LANGUAGE_6": 458901, "LANG6": 458901, "LANGUAGE_7": 458902, "LANG7": 458902, "LANGUAGE_8": 458903, "LANG8": 458903, "LANGUAGE_9": 458904, "LANG9": 458904, "ALT_ERASE": 458905, "SYSREQ": 458906, "ATTENTION": 458906, "K_CANCEL": 458907, "CLEAR": 458908, "PRIOR": 458909, "RETURN2": 458910, "RET2": 458910, "SEPARATOR": 458911, "OUT": 458912, "OPER": 458913, "CLEAR_AGAIN": 458914, "CRSEL": 458915, "EXSEL": 458916, "KP_LEFT_PARENTHESIS": 458934, "KP_LPAR": 458934, "KP_RIGHT_PARENTHESIS": 458935, "KP_RPAR": 458935, "KP_CLEAR": 458968, "LEFT_CONTROL": 458976, "LCTRL": 458976, "LCTL": 458976, "LEFT_SHIFT": 458977, "LSHIFT": 458977, "LSHFT": 458977, "LSFT": 458977, "LEFT_ALT": 458978, "LALT": 458978, "LEFT_GUI": 458979, "LGUI": 458979, "LEFT_WIN": 458979, "LWIN": 458979, "LEFT_COMMAND": 458979, "LCMD": 458979, "LEFT_META": 458979, "LMETA": 458979, "RIGHT_CONTROL": 458980, "RCTRL": 458980, "RCTL": 458980, "RIGHT_SHIFT": 458981, "RSHIFT": 458981, "RSHFT": 458981, "RSFT": 458981, "RIGHT_ALT": 458982, "RALT": 458982, "RIGHT_GUI": 458983, "RGUI": 458983, "RIGHT_WIN": 458983, "RWIN": 458983, "RIGHT_COMMAND": 458983, "RCMD": 458983, "RIGHT_META": 458983, "RMETA": 458983, "K_PLAY_PAUSE": 458984, "K_PP": 458984, "K_STOP2": 458985, "K_PREVIOUS": 458986, "K_PREV": 458986, "K_NEXT": 458987, "K_EJECT": 458988, "K_VOLUME_UP2": 458989, "K_VOL_UP2": 458989, "K_VOLUME_DOWN2": 458990, "K_VOL_DN2": 458990, "K_MUTE2": 458991, "K_WWW": 458992, "K_BACK": 458993, "K_FORWARD": 458994, "K_STOP3": 458995, "K_FIND2": 458996, "K_SCROLL_UP": 458997, "K_SCROLL_DOWN": 458998, "K_EDIT": 458999, "K_SLEEP": 459000, "K_LOCK": 459001, "K_SCREENSAVER": 459001, "K_COFFEE": 459001, "K_REFRESH": 459002, "K_CALCULATOR": 459003, "K_CALC": 459003, "C_POWER": 786480, "C_PWR": 786480, "C_RESET": 786481, "C_SLEEP": 786482, "C_SLEEP_MODE": 786484, "C_MENU": 786496, "C_MENU_PICK": 786497, "C_MENU_SELECT": 786497, "C_MENU_UP": 786498, "C_MENU_DOWN": 786499, "C_MENU_LEFT": 786500, "C_MENU_RIGHT": 786501, "C_MENU_ESCAPE": 786502, "C_MENU_ESC": 786502, "C_MENU_INCREASE": 786503, "C_MENU_INC": 786503, "C_MENU_DECREASE": 786504, "C_MENU_DEC": 786504, "C_DATA_ON_SCREEN": 786528, "C_CAPTIONS": 786529, "C_SUBTITLES": 786529, "C_SNAPSHOT": 786533, "C_PIP": 786535, "C_RED_BUTTON": 786537, "C_RED": 786537, "C_GREEN_BUTTON": 786538, "C_GREEN": 786538, "C_BLUE_BUTTON": 786539, "C_BLUE": 786539, "C_YELLOW_BUTTON": 786540, "C_YELLOW": 786540, "C_ASPECT": 786541, "C_BRI_INC": 786543, "C_BRI_UP": 786543, "C_BRI_DEC": 786544, "C_BRI_DN": 786544, "C_BKLT_TOG": 786546, "C_BRI_MIN": 786547, "C_BRI_MAX": 786548, "C_BRI_AUTO": 786549, "C_MEDIA_STEP": 786562, "C_MODE_STEP": 786562, "C_RECALL_LAST": 786563, "C_CHAN_LAST": 786563, "C_MEDIA_TV": 786569, "C_MEDIA_WWW": 786570, "C_MEDIA_DVD": 786571, "C_MEDIA_PHONE": 786572, "C_MEDIA_GAMES": 786575, "C_MEDIA_CD": 786577, "C_MEDIA_VCR": 786578, "C_MEDIA_TUNER": 786579, "C_QUIT": 786580, "C_HELP": 786581, "C_MEDIA_TAPE": 786582, "C_MEDIA_CABLE": 786583, "C_MEDIA_HOME": 786586, "C_CHANNEL_INC": 786588, "C_CHAN_INC": 786588, "C_CHANNEL_DEC": 786589, "C_CHAN_DEC": 786589, "C_MEDIA_VCR_PLUS": 786592, "C_PLAY": 786608, "C_PAUSE": 786609, "C_RECORD": 786610, "C_REC": 786610, "C_FAST_FORWARD": 786611, "C_FF": 786611, "C_REWIND": 786612, "C_RW": 786612, "C_NEXT": 786613, "M_NEXT": 786613, "C_PREVIOUS": 786614, "C_PREV": 786614, "M_PREV": 786614, "C_STOP": 786615, "M_STOP": 786615, "C_EJECT": 786616, "M_EJCT": 786616, "C_RANDOM_PLAY": 786617, "C_SHUFFLE": 786617, "C_REPEAT": 786620, "C_SLOW_TRACKING": 786623, "C_SLOW2": 786623, "C_STOP_EJECT": 786636, "C_PLAY_PAUSE": 786637, "C_PP": 786637, "M_PLAY": 786637, "C_VOICE_COMMAND": 786639, "C_MUTE": 786658, "M_MUTE": 786658, "C_BASS_BOOST": 786661, "C_VOLUME_UP": 786665, "C_VOL_UP": 786665, "M_VOLU": 786665, "C_VOLUME_DOWN": 786666, "C_VOL_DN": 786666, "M_VOLD": 786666, "C_SLOW": 786677, "C_ALT_AUDIO_INC": 786803, "C_AL_WORD": 786820, "C_AL_TEXT_EDITOR": 786821, "C_AL_SPREADSHEET": 786822, "C_AL_SHEET": 786822, "C_AL_DATABASE": 786825, "C_AL_DB": 786825, "C_AL_EMAIL": 786826, "C_AL_MAIL": 786826, "C_AL_NEWS": 786827, "C_AL_VOICEMAIL": 786828, "C_AL_ADDRESS_BOOK": 786829, "C_AL_CALENDAR": 786830, "C_AL_CAL": 786830, "C_AL_JOURNAL": 786832, "C_AL_FINANCE": 786833, "C_AL_CALCULATOR": 786834, "C_AL_CALC": 786834, "C_AL_WWW": 786838, "C_AL_NETWORK_CHAT": 786841, "C_AL_CHAT": 786841, "C_AL_LOGOFF": 786844, "C_AL_SCREENSAVER": 786846, "C_AL_COFFEE": 786846, "C_AL_CONTROL_PANEL": 786847, "C_AL_PREV_TASK": 786852, "C_AL_HELP": 786854, "C_AL_DOCUMENTS": 786855, "C_AL_DOCS": 786855, "C_AL_SPELLCHECK": 786859, "C_AL_SPELL": 786859, "C_AL_SCREEN_SAVER": 786865, "C_AL_FILE_BROWSER": 786868, "C_AL_FILES": 786868, "C_AL_IMAGE_BROWSER": 786870, "C_AL_IMAGES": 786870, "C_AL_AUDIO_BROWSER": 786871, "C_AL_AUDIO": 786871, "C_AL_MUSIC": 786871, "C_AL_MOVIE_BROWSER": 786872, "C_AL_MOVIES": 786872, "C_AL_IM": 786876, "C_AL_TIPS": 786877, "C_AL_TUTORIAL": 786877, "C_AC_NEW": 786945, "C_AC_OPEN": 786946, "C_AC_CLOSE": 786947, "C_AC_EXIT": 786948, "C_AC_SAVE": 786951, "C_AC_PRINT": 786952, "C_AC_PROPERTIES": 786953, "C_AC_PROPS": 786953, "C_AC_UNDO": 786970, "C_AC_COPY": 786971, "C_AC_CUT": 786972, "C_AC_PASTE": 786973, "C_AC_FIND": 786975, "C_AC_SEARCH": 786977, "C_AC_GOTO": 786978, "C_AC_HOME": 786979, "C_AC_BACK": 786980, "C_AC_FORWARD": 786981, "C_AC_STOP": 786982, "C_AC_REFRESH": 786983, "C_AC_BOOKMARKS": 786986, "C_AC_FAVORITES": 786986, "C_AC_FAVOURITES": 786986, "C_AC_ZOOM_IN": 786989, "C_AC_ZOOM_OUT": 786990, "C_AC_ZOOM": 786991, "C_AC_VIEW_TOGGLE": 786994, "C_AC_SCROLL_UP": 786995, "C_AC_SCROLL_DOWN": 786996, "C_AC_EDIT": 787005, "C_AC_CANCEL": 787039, "C_AC_INSERT": 787049, "C_AC_INS": 787049, "C_AC_DEL": 787050, "C_AC_REDO": 787065, "C_AC_REPLY": 787081, "C_AC_FORWARD_MAIL": 787083, "C_AC_SEND": 787084, "C_KBIA_PREV": 787143, "C_KBIA_NEXT": 787144, "C_KBIA_PREV_GRP": 787145, "C_KBIA_NEXT_GRP": 787146, "C_KBIA_ACCEPT": 787147, "C_KBIA_CANCEL": 787148, "C_AC_NEXT_KEYBOARD_LAYOUT_SELECT": 787101, "GLOBE": 787101, "LCLK": 1, "MB1": 1, "RCLK": 2, "MB2": 2, "MCLK": 4, "MB3": 4, "MB4": 8, "MB5": 16, "BT_CLR": 0, "BT_NXT": 1, "BT_PRV": 2, "BT_SEL": 3, "BT_CLR_ALL": 4, "BT_DISC": 5};
+
+// ZMK Studio protobuf subset used by the C4MTB editor.
+const STUDIO = { core: 3, keymap: 5, custom: 100 };
+const SOF = 0xab;
+const ESC = 0xac;
+const EOF = 0xad;
+const empty = new Uint8Array();
+const utf8 = new TextDecoder();
+
+function varint(value) {
+  const bytes = [];
+  do {
+    bytes.push((value % 128) + (value >= 128 ? 128 : 0));
+    value = Math.floor(value / 128);
+  } while (value);
+  return bytes;
+}
+
+function message(...fields) {
+  const bytes = [];
+  for (const [number, value] of fields) {
+    if (typeof value === "number") {
+      bytes.push(...varint(number * 8), ...varint(value));
+    } else {
+      bytes.push(...varint(number * 8 + 2), ...varint(value.length), ...value);
+    }
+  }
+  return Uint8Array.from(bytes);
+}
+
+function protobuf(bytes) {
+  if (!(bytes instanceof Uint8Array)) throw new Error("本体から必要な応答がありません。");
+  const values = new Map();
+  let offset = 0;
+  function readNumber() {
+    let value = 0;
+    let factor = 1;
+    for (let count = 0; count < 10 && offset < bytes.length; count++) {
+      const byte = bytes[offset++];
+      value += (byte & 127) * factor;
+      if (byte < 128) return value;
+      factor *= 128;
+    }
+    throw new Error("本体から読み取ったデータが途中で途切れました。");
+  }
+  while (offset < bytes.length) {
+    const tag = readNumber();
+    const number = Math.floor(tag / 8);
+    const wire = tag % 8;
+    let value;
+    if (number === 0) throw new Error("本体から不明な応答を受信しました。");
+    if (wire === 0) {
+      value = readNumber();
+    } else {
+      const length = wire === 2 ? readNumber() : ({1: 8, 5: 4})[wire];
+      if (length === undefined || length > bytes.length - offset) {
+        throw new Error("本体から不明な応答を受信しました。");
+      }
+      value = bytes.subarray(offset, offset + length);
+      offset += length;
+    }
+    if (!values.has(number)) values.set(number, []);
+    values.get(number).push(value);
+  }
+  return {
+    get: (number, fallback) => values.get(number)?.at(-1) ?? fallback,
+    all: (number) => values.get(number) ?? [],
+    has: (number) => values.has(number),
+  };
+}
+
+function textField(fields, number) {
+  return utf8.decode(fields.get(number, empty));
+}
+
+function encodeFrame(bytes) {
+  const framed = [SOF];
+  for (const byte of bytes) {
+    if (byte === SOF || byte === ESC || byte === EOF) framed.push(ESC);
+    framed.push(byte);
+  }
+  framed.push(EOF);
+  return Uint8Array.from(framed);
+}
+
+function frameDecoder(onFrame) {
+  let frame = null;
+  let escaped = false;
+  return (bytes) => {
+    for (const byte of bytes) {
+      if (!escaped && byte === SOF) {
+        frame = [];
+      } else if (frame && !escaped && byte === EOF) {
+        onFrame(Uint8Array.from(frame));
+        frame = null;
+      } else if (frame && !escaped && byte === ESC) {
+        escaped = true;
+      } else if (frame) {
+        frame.push(byte);
+        escaped = false;
+        if (frame.length > 65536) frame = null;
+      }
+    }
+  };
+}
+
+class StudioPort {
+  constructor(port, onLock, onClose) {
+    this.port = port;
+    this.onLock = onLock;
+    this.onClose = onClose;
+    this.sequence = 0;
+  }
+
+  async open() {
+    await this.port.open({baudRate: 12500});
+    if (!this.port.readable || !this.port.writable) {
+      await this.port.close();
+      throw new Error("USBシリアルポートを開けませんでした。");
+    }
+    this.reader = this.port.readable.getReader();
+    this.writer = this.port.writable.getWriter();
+    this.reading = this.read();
+  }
+
+  async read() {
+    const feed = frameDecoder((frame) => this.receive(frame));
+    try {
+      while (true) {
+        const {value, done} = await this.reader.read();
+        if (done) break;
+        feed(value);
+      }
+    } catch (error) {
+      this.pending?.reject(error);
+    } finally {
+      this.reader.releaseLock();
+      this.pending?.reject(new Error("USB接続が切れました。"));
+      if (!this.closing) queueMicrotask(() => {
+        this.onClose();
+        void this.close();
+      });
+    }
+  }
+
+  receive(frame) {
+    const packet = protobuf(frame);
+    if (packet.has(1)) {
+      const reply = protobuf(packet.get(1));
+      if (reply.get(1, 0) === this.pending?.id) this.pending.resolve(reply);
+    }
+    if (packet.has(2)) {
+      const notification = protobuf(packet.get(2));
+      if (notification.has(2)) {
+        const core = protobuf(notification.get(2));
+        if (core.has(1)) this.onLock(core.get(1) === 1);
+      }
+    }
+  }
+
+  async close() {
+    if (this.closing) return this.closing;
+    this.closing = (async () => {
+      this.pending?.reject(new Error("USB接続が切れました。"));
+      await this.reader?.cancel().catch(() => {});
+      await this.reading;
+      this.writer?.releaseLock();
+      await this.port.close().catch(() => {});
+    })();
+    return this.closing;
+  }
+
+  async request(subsystem, payload) {
+    if (this.closing || !this.writer) throw new Error("USB接続を確認してください。");
+    if (this.pending) throw new Error("本体が処理中です。");
+    const id = ++this.sequence;
+    const bytes = encodeFrame(message([1, id], [subsystem, payload]));
+    let timer;
+    const response = new Promise((resolve, reject) => {
+      this.pending = {id, resolve, reject};
+      timer = setTimeout(() => reject(new Error("本体の応答を確認できませんでした。USB接続とファームウェアを確認してください。")), 5500);
+    });
+    try {
+      void this.writer.write(bytes).catch(this.pending.reject);
+      const reply = await response;
+      if (reply.has(2)) {
+        const code = protobuf(reply.get(2)).get(2, 0);
+        if (code === 1) this.onLock(false);
+        throw new Error(code === 1 ? "本体のStudioロックを解除してください。" : "本体がリクエストを受け付けませんでした。");
+      }
+      return protobuf(reply.get(subsystem));
+    } finally {
+      clearTimeout(timer);
+      this.pending = null;
+    }
+  }
+
+  async name() {
+    const reply = await this.request(STUDIO.core, message([1, 1]));
+    return textField(protobuf(reply.get(1)), 1);
+  }
+
+  async unlocked() {
+    const reply = await this.request(STUDIO.core, message([2, 1]));
+    return reply.get(2, 0) === 1;
+  }
+
+  async discover() {
+    const reply = await this.request(STUDIO.custom, message([1, empty]));
+    const subsystems = protobuf(reply.get(1)).all(1).map(protobuf);
+    this.subsystems = new Map(subsystems.map((item) => [textField(item, 2), item.get(1, 0)]));
+  }
+
+  async custom(name, payload) {
+    const index = this.subsystems.get(name);
+    if (index === undefined) throw new Error("接続したファームウェアでは、この設定の読み書きに対応していません。");
+    const reply = await this.request(STUDIO.custom, message([2, message([1, index], [2, payload])]));
+    const call = protobuf(reply.get(2));
+    if (call.get(1, 0) !== index) throw new Error("本体の応答が一致しません。");
+    return protobuf(call.get(2));
+  }
+
+  async pointer(method, response, ...fields) {
+    const result = await this.custom("cormoran_rip", message([method, message(...fields)]));
+    if (result.has(1)) {
+      const detail = textField(protobuf(result.get(1)), 1);
+      throw new Error(detail || "本体がトラックボール設定を受け付けませんでした。");
+    }
+    return protobuf(result.get(response));
+  }
+
+  async processor(id) {
+    const reply = await this.pointer(2, 3, [1, id]);
+    const item = protobuf(reply.get(1));
+    return {id: item.get(1, 0), name: textField(item, 2), numerator: item.get(3, 0), denominator: item.get(4, 0),
+      x: Boolean(item.get(16, 0)), y: Boolean(item.get(17, 0))};
+  }
+
+  async readPointer() {
+    const processors = [];
+    for (let id = 0; id < 3; id++) processors.push(await this.processor(id));
+    for (const name of ["mouse", "scroll", "zoom"]) {
+      if (!processors.some((item) => item.name === name && item.numerator && item.denominator)) {
+        throw new Error("C4MTBのポインター・スクロール・ズーム設定を特定できませんでした。");
+      }
+    }
+    return Object.fromEntries(processors.map((item) => [item.name, item]));
+  }
+
+  async writePointer(name, target, persist) {
+    const current = this.pointerState[name];
+    let changes = [];
+    if (current.numerator !== target.numerator || current.denominator !== target.denominator || target.persistGain) {
+      const numerator = [3, 4, target.numerator];
+      const denominator = [4, 5, target.denominator];
+      // Move toward the new ratio without briefly speeding past both endpoints.
+      const divideFirst = target.denominator > current.denominator;
+      changes = divideFirst ? [denominator, numerator] : [numerator, denominator];
+    }
+    if (name === "scroll") {
+      if (current.x !== target.x || target.persistX) changes.push([18, 19, Number(target.x)]);
+      if (current.y !== target.y || target.persistY) changes.push([19, 20, Number(target.y)]);
+    }
+    for (const [method, response, value] of changes) {
+      await this.pointer(method, response, [1, current.id], [2, value], [3, persist ? 0 : 1]);
+    }
+    const result = await this.processor(current.id);
+    if (["numerator", "denominator", "x", "y"].some((key) => result[key] !== target[key])) {
+      throw new Error("設定を書き込んだ後の読み取り結果が一致しませんでした。");
+    }
+    this.pointerState[name] = result;
+  }
+
+  async keymap(method, payload = 1) {
+    return (await this.request(STUDIO.keymap, message([method, payload])));
+  }
+
+  async readBindings() {
+    const keymap = protobuf((await this.keymap(1)).get(1));
+    const layers = keymap.all(1).map((bytes) => {
+      const layer = protobuf(bytes);
+      const bindings = layer.all(3).map((raw) => {
+        const binding = protobuf(raw);
+        const encoded = binding.get(1, 0);
+        return {id: (encoded >>> 1) ^ -(encoded & 1), p1: binding.get(2, 0), p2: binding.get(3, 0)};
+      });
+      return {id: layer.get(1, 0), name: textField(layer, 2), bindings};
+    });
+    if (layers.length !== 6 || !layers.every((layer, index) => layer.id === index && layer.bindings.length === 38)) {
+      throw new Error("本体のレイヤー構成がC4MTBの標準構成と一致しません。ファイル編集を使ってください。");
+    }
+    return layers;
+  }
+
+  async readAliases() {
+    const result = await this.custom("cormoran__fast_keymap", message([2, message([1, 2], [2, 1])]));
+    const list = protobuf(result.get(3));
+    return new Map(list.all(1).map((raw) => {
+      const entry = protobuf(raw);
+      const details = protobuf(entry.get(3, empty));
+      return [entry.get(1, 0), {alias: textField(details, 2), name: textField(details, 1)}];
+    }));
+  }
+
+  async hasUnsavedKeys() {
+    const response = await this.keymap(3);
+    if (!response.has(3)) throw new Error("キーマップの保存状態を確認できませんでした。");
+    return response.get(3) === 1;
+  }
+
+  async setBinding(layer, position, binding) {
+    const encodedBinding = message([1, binding.id * 2], [2, binding.p1], [3, binding.p2]);
+    const response = await this.keymap(2, message([1, layer], [2, position], [3, encodedBinding]));
+    if (response.get(2) !== 0) throw new Error("本体がキー割り当てを受け付けませんでした。動作と引数を確認してください。");
+  }
+
+  async saveKeys() {
+    const reply = await this.keymap(4);
+    if (protobuf(reply.get(4)).get(1) !== 1) throw new Error("キーマップを本体に保存できませんでした。");
+  }
+}
+
+const COMBO_SERVICE = "cormoran__runtime_combo";
+
+class HardwareCombos {
+  constructor(client) {
+    this.client = client;
+  }
+
+  async request(method, response, ...fields) {
+    const reply = await this.client.custom(COMBO_SERVICE, message([method, message(...fields)]));
+    if (reply.has(1)) {
+      const error = textField(protobuf(reply.get(1)), 1);
+      throw new Error(error || "本体がコンボの設定を受け付けませんでした。");
+    }
+    return protobuf(reply.get(response));
+  }
+
+  async read() {
+    const global = protobuf((await this.request(6, 5)).get(1));
+    const slots = global.get(3, 0);
+    if (!Number.isInteger(slots) || slots < 1 || slots > 16) {
+      throw new Error("本体のコンボスロット数に対応していません。");
+    }
+    const combos = (await this.request(1, 2)).all(1).map((raw) => {
+      const item = protobuf(raw);
+      const binding = protobuf(item.get(4, empty));
+      const packedPositions = [];
+      for (const value of item.all(3)) {
+        if (typeof value === "number") {
+          packedPositions.push(value);
+        } else {
+          // The schema also allows packed repeated uint32 values.
+          let position = 0;
+          let factor = 1;
+          for (const byte of value) {
+            position += (byte & 127) * factor;
+            if (byte < 128) {
+              packedPositions.push(position);
+              position = 0;
+              factor = 1;
+            } else {
+              factor *= 128;
+            }
+          }
+          if (factor !== 1) throw new Error("本体から受信したコンボの位置情報が途切れています。");
+        }
+      }
+      const layerMask = item.get(6, 0);
+      return {
+        slot: item.get(1, 0), name: textField(item, 2), positions: packedPositions,
+        binding: {id: binding.get(1, 0), p1: binding.get(2, 0), p2: binding.get(3, 0)},
+        layers: Array.from({length: 6}, (_, index) => index).filter((index) => layerMask & (1 << index)),
+        enabled: item.get(8, 0) === 1, timeout: item.get(9, 0), idle: item.get(10, 0), release: item.get(11, 0),
+      };
+    });
+    return {slots, combos};
+  }
+
+  async write(slot, combo, binding) {
+    const layerMask = combo.layers.reduce((mask, layer) => mask | (1 << layer), 0);
+    const payload = [
+      [1, slot], ...combo.positions.map((position) => [2, position]),
+      [3, message([1, binding.id], [2, binding.p1], [3, binding.p2])], [5, layerMask],
+      [7, 1], [8, 1], [9, combo.timeout], [10, combo.idle], [11, combo.release],
+    ];
+    await this.request(3, 4, ...payload);
+    if (combo.writeName) {
+      await this.request(4, 4, [1, slot], [2, new TextEncoder().encode(combo.name)], [3, 1]);
+    }
+  }
+
+  async delete(slot) {
+    await this.request(5, 4, [1, slot], [2, 1]);
+  }
+}
+
+
+const layerLabels = ["基本", "数字", "ナビ", "スクロール", "設定", "ズーム"];
+const sourceLayers = ["default_layer", "number_layer", "navigation_layer", "scroll_layer", "settings_layer", "zoom_layer"];
+const modifiers = {LC: 1, LS: 2, LA: 4, LG: 8, RC: 16, RS: 32, RA: 64, RG: 128};
+const preferredCodes = "ENTER ESC BACKSPACE TAB SPACE MINUS EQUAL LEFT_BRACKET RIGHT_BRACKET BACKSLASH SQT GRAVE COMMA PERIOD SLASH CAPSLOCK LEFT_ARROW RIGHT_ARROW UP DOWN DEL HOME END PAGE_UP PAGE_DOWN LEFT_CTRL LEFT_SHIFT LEFT_ALT LEFT_WIN RIGHT_CTRL RIGHT_SHIFT RIGHT_ALT RIGHT_WIN INT_RO INT_YEN INT_MUHENKAN INT_HENKAN KP_ENTER KP_PLUS KP_MINUS LCLK RCLK MCLK".split(" ");
+const preferredHid = new Set([...preferredCodes, ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ...Array.from({length: 10}, (_, i) => "NUMBER_" + i), ...Array.from({length: 24}, (_, i) => "F" + (i + 1))]);
+const codeByValue = new Map();
+for (const [name, code] of Object.entries(keyCodes)) {
+  if (!codeByValue.has(code) || preferredHid.has(name)) codeByValue.set(code, name);
+}
+const bindingArity = {kp: 1, mt: 2, lt: 2, mo: 1, to: 1, tog: 1, trans: 0, none: 0, sk: 1, sl: 1, kt: 1,
+  mkp: 1, msc: 1, mmv: 1, bt: 2, studio_unlock: 0, cursor_speed: 0, bootloader: 0, sys_reset: 0, zoom_ball: 0};
+
+function parseBinding(value) {
+  const match = value.trim().match(/^&([A-Za-z_]\w*)\s*(.*)$/s);
+  if (!match || /[&<>{};"'#/*]/.test(match[2])) throw new Error("「&kp TAB」のようにZMKの割り当てを1つ入力してください。");
+  const params = [];
+  let token = "";
+  let depth = 0;
+  for (const char of match[2].trim()) {
+    if (char === ")" && --depth < 0) throw new Error("引数の括弧を確認してください。");
+    if (char === "(") depth++;
+    if (/\s/.test(char) && depth === 0) {
+      if (token) params.push(token);
+      token = "";
+    } else {
+      token += char;
+    }
+  }
+  if (depth) throw new Error("引数の括弧を確認してください。");
+  if (token) params.push(token);
+  if (!params.every((param) => /^[A-Za-z_0-9(),+\-\s]+$/.test(param))) throw new Error("ZMKの引数を確認してください。");
+  const alias = match[1];
+  const expects = bindingArity[alias];
+  const bluetoothShortcut = alias === "bt" && /^(BT_CLR|BT_CLR_ALL|BT_NXT|BT_PRV)$/.test(params[0]);
+  if (expects !== undefined && params.length !== (bluetoothShortcut ? 1 : expects)) {
+    throw new Error("&" + alias + " の引数の数を確認してください。");
+  }
+  return {alias, params, raw: ["&" + alias, ...params].join(" ")};
+}
+
+function numberArgument(argument) {
+  if (Object.hasOwn(keyCodes, argument)) return keyCodes[argument];
+  if (/^(0x[0-9a-f]+|\d+)$/i.test(argument)) {
+    const number = Number(argument);
+    if (Number.isSafeInteger(number) && number <= 0xffffffff) return number;
+  }
+  const macro = argument.match(/^([A-Z_]+)\(\s*([^]*)\s*\)$/);
+  if (macro && Object.hasOwn(modifiers, macro[1])) {
+    return ((modifiers[macro[1]] << 24) | numberArgument(macro[2].trim())) >>> 0;
+  }
+  if (macro) {
+    const parts = macro[2].split(",").map((part) => part.trim());
+    const motion = macro[1];
+    if ((motion === "MOVE_X" || motion === "MOVE_Y") && parts.length === 1 && /^-?\d+$/.test(parts[0])) {
+      return ((Number(parts[0]) & 65535) << (motion === "MOVE_X" ? 16 : 0)) >>> 0;
+    }
+    if (motion === "MOVE" && parts.length === 2 && parts.every((part) => /^-?\d+$/.test(part))) {
+      return (((Number(parts[0]) & 65535) << 16) | (Number(parts[1]) & 65535)) >>> 0;
+    }
+  }
+  throw new Error("「" + argument + "」をZMKのキーコードに変換できませんでした。");
+}
+
+function validateSourceBinding(value) {
+  const binding = parseBinding(value);
+  if (Object.hasOwn(bindingArity, binding.alias)) {
+    binding.params.forEach(numberArgument);
+    if (["lt", "mo", "to", "tog", "sl"].includes(binding.alias) && numberArgument(binding.params[0]) >= sourceLayers.length) {
+      throw new Error("レイヤー番号は 0〜5 を指定してください。");
+    }
+  }
+  return binding.raw;
+}
+
+function liveBinding(value, aliases) {
+  const {alias, params} = parseBinding(value);
+  const id = [...aliases].find(([, info]) => info.alias === alias)?.[0];
+  if (id === undefined) throw new Error("本体から「&" + alias + "」を見つけられませんでした。");
+  if (alias === "bt" && params.length === 1) params.push("0");
+  return {id, p1: params[0] ? numberArgument(params[0]) : 0, p2: params[1] ? numberArgument(params[1]) : 0};
+}
+
+function formatHid(value) {
+  const flags = value >>> 24;
+  let token = codeByValue.get(value & 0xffffff) ?? String(value & 0xffffff);
+  for (const [name, bit] of Object.entries(modifiers)) {
+    if (flags & bit) token = name + "(" + token + ")";
+  }
+  return token;
+}
+
+function formatLive(binding, aliases) {
+  const alias = aliases?.get(binding.id)?.alias;
+  if (!alias || !/^[A-Za-z_]\w*$/.test(alias)) return {raw: "", label: aliases?.get(binding.id)?.name || "ID " + binding.id};
+  let args = [];
+  switch (alias) {
+    case "kp": args = [formatHid(binding.p1)]; break;
+    case "mt": args = [formatHid(binding.p1), formatHid(binding.p2)]; break;
+    case "lt": args = [binding.p1, formatHid(binding.p2)]; break;
+    case "mkp": args = [["", "LCLK", "RCLK", "", "MCLK"][binding.p1] || binding.p1]; break;
+    case "bt": {
+      const command = ["BT_CLR", "BT_NXT", "BT_PRV", "BT_SEL", "BT_CLR_ALL", "BT_DISC"][binding.p1];
+      args = command ? ([3, 5].includes(binding.p1) ? [command, binding.p2] : [command]) : [binding.p1, binding.p2];
+      break;
+    }
+    default: {
+      const count = bindingArity[alias] ?? (binding.p2 ? 2 : binding.p1 ? 1 : 0);
+      args = [binding.p1, binding.p2].slice(0, count);
+    }
+  }
+  const raw = ["&" + alias, ...args].join(" ");
+  return {raw, label: bindingLabel(raw)};
+}
+
+function bindingLabel(raw) {
+  const {alias, params} = parseBinding(raw);
+  const key = (params.at(-1) || "").replace(/^NUMBER_/, "").replace(/^N([0-9])$/, "$1");
+  const names = {trans:"·", none:"無効", mkp:"クリック", msc:"ホイール", bt:"BT", zoom_ball:"ズーム", studio_unlock:"解除", cursor_speed:"感度", sys_reset:"再起動", bootloader:"DFU"};
+  const shortKeys = {SPACE:"Space", ENTER:"Enter", BACKSPACE:"Bksp", INT_MUHENKAN:"無変換", INT_HENKAN:"変換", LEFT_ALT:"Alt", LCTRL:"Ctrl",
+    LEFT_CTRL:"Ctrl", ESC:"Esc", TAB:"Tab", LEFT_ARROW:"←", RIGHT_ARROW:"→", UP:"↑", DOWN:"↓", MINUS:"−", COMMA:",", PERIOD:".", DOT:".", DEL:"Del", SLASH:"/"};
+  if (alias === "mo" || alias === "to" || alias === "tog" || alias === "sl") return layerLabels[params[0]] ?? "L" + params[0];
+  if (["kp", "mt", "lt", "sk", "kt"].includes(alias)) return shortKeys[key] ?? compactBinding(key);
+  return names[alias] ?? alias;
+}
+
+function compactBinding(raw) {
+  return raw.replace(/^&kp /, "").replace(/^&mkp LCLK$/, "左クリック").replace(/^&mkp RCLK$/, "右クリック")
+    .replace(/\bLS\(([^()]+)\)/g, "Shift+$1").replace(/\bLC\(([^()]+)\)/g, "Ctrl+$1");
+}
+
+function maskComments(source) {
+  return source.replace(/"(?:\\.|[^"\\])*"|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) =>
+    match.startsWith('"') ? match : match.replace(/[^\n]/g, " "));
+}
+
+function childNodes(text, from = 0, end = text.length) {
+  const nodes = [];
+  // Quoted text is blanked at the call site, preserving every character offset.
+  const starts = /([\w,.-]+(?:\s*:\s*[\w,.-]+)?|\/)\s*\{/g;
+  starts.lastIndex = from;
+  for (let match; (match = starts.exec(text)) && match.index < end;) {
+    let depth = 1;
+    let cursor = starts.lastIndex;
+    while (cursor < end && depth) {
+      if (text[cursor] === "{") depth++;
+      if (text[cursor] === "}") depth--;
+      cursor++;
+    }
+    if (depth) throw new Error("ファイルの波括弧を確認してください。");
+    const suffix = /^\s*;/.exec(text.slice(cursor, end));
+    nodes.push({name: match[1].trim().split(":").at(-1).trim(), start: match.index, body: starts.lastIndex,
+      close: cursor - 1, end: cursor + (suffix?.[0].length ?? 0)});
+    starts.lastIndex = cursor;
+  }
+  return nodes;
+}
+
+function property(text, node, name, pattern = "<([^<>]*)>") {
+  const match = new RegExp("^([ \\t]*)(" + name + "\\s*=\\s*" + pattern + "\\s*;)", "m").exec(text.slice(node.body, node.close));
+  return match ? {start: node.body + match.index + match[1].length, value: match[3],
+    end: node.body + match.index + match[0].length, valueStart: node.body + match.index + match[0].indexOf("<") + 1} : null;
+}
+
+function readSource(source) {
+  const clean = maskComments(source);
+  const structural = clean.replace(/"(?:\\.|[^"\\])*"/g, (value) => " ".repeat(value.length));
+  const root = childNodes(structural).find((node) => node.name === "/");
+  if (!root) throw new Error("C4MTBの .keymap ファイルを選んでください。");
+  const sections = childNodes(structural, root.body, root.close);
+  const keymap = sections.find((node) => node.name === "keymap");
+  const comboNode = sections.find((node) => node.name === "combos");
+  if (!keymap || !comboNode) throw new Error("keymap と combos があるC4MTBの .keymap ファイルを選んでください。");
+  const keys = childNodes(structural, keymap.body, keymap.close);
+  const layers = sourceLayers.map((name, index) => {
+    const node = keys[index];
+    if (node?.name !== name) throw new Error("C4MTBの標準6レイヤー構成と一致しません。");
+    const bindings = property(clean, node, "bindings");
+    if (!bindings || bindings.value.includes("#")) throw new Error("レイヤーの bindings を読み取れませんでした。");
+    const tokens = [...bindings.value.matchAll(/&[A-Za-z_]\w*[^&]*/g)];
+    if (tokens.length !== 38) throw new Error("各レイヤーに38キーあるC4MTBの設定を選んでください。");
+    return tokens.map((token) => ({...parseBinding(token[0]), start: bindings.valueStart + token.index,
+      end: bindings.valueStart + token.index + token[0].trimEnd().length}));
+  });
+  const combos = childNodes(structural, comboNode.body, comboNode.close).map((node) => {
+    const nums = (name) => {
+      const value = property(clean, node, name)?.value.trim();
+      if (!value) return [];
+      if (!/^\d+(?:\s+\d+)*$/.test(value)) throw new Error(node.name + " の位置・時間・レイヤーは数値で指定してください。");
+      return value.split(/\s+/).map(Number);
+    };
+    const raw = property(clean, node, "bindings")?.value;
+    if (!raw) throw new Error(node.name + " の動作を読み取れませんでした。");
+    return {node, name: node.name, raw: parseBinding(raw).raw, positions: nums("key-positions"), layers: nums("layers"),
+      timeout: nums("timeout-ms")[0] ?? 50, idle: nums("require-prior-idle-ms")[0] ?? 0,
+      slow: /\bslow-release\s*;/.test(clean.slice(node.body, node.close))};
+  });
+  return {source, clean, layers, combos, comboNode};
+}
+
+function spliceSource(source, patches) {
+  for (const {start, end, text} of patches.sort((left, right) => right.start - left.start)) {
+    source = source.slice(0, start) + text + source.slice(end);
+  }
+  return source;
+}
+
+function editCombo(model, original, draft) {
+  const fields = new Map([
+    ["key-positions", draft.positions.join(" ")], ["bindings", draft.raw], ["timeout-ms", String(draft.timeout)],
+    ["layers", draft.layers.join(" ")], ["require-prior-idle-ms", draft.idle ? String(draft.idle) : ""],
+  ]);
+  if (!original) {
+    const props = [...fields].filter(([, value]) => value).map(([key, value]) => "            " + key + " = <" + value + ">;\n");
+    const text = "\n        " + draft.name + " {\n" + props.join("") + (draft.slow ? "            slow-release;\n" : "") + "        };\n";
+    const lineStart = model.source.lastIndexOf("\n", model.comboNode.close - 1) + 1;
+    const start = /^\s*$/.test(model.source.slice(lineStart, model.comboNode.close)) ? lineStart : model.comboNode.close;
+    return spliceSource(model.source, [{start, end: start, text}]);
+  }
+  const {node} = original;
+  const patches = [];
+  if (draft.name !== original.name) {
+    const header = model.source.slice(node.start, node.body - 1);
+    const nameOffset = header.lastIndexOf(original.name);
+    const start = node.start + nameOffset;
+    patches.push({start, end: start + original.name.length, text: draft.name});
+  }
+  for (const [key, value] of fields) {
+    const old = property(model.clean, node, key);
+    if (old) {
+      if (old.value.trim().replace(/\s+/g, " ") !== value) {
+        patches.push({start: old.start, end: old.end, text: value ? key + " = <" + value + ">;" : ""});
+      }
+    } else if (value) {
+      patches.push({start: node.body, end: node.body, text: "\n            " + key + " = <" + value + ">;"});
+    }
+  }
+  if (draft.slow !== original.slow) {
+    const old = /\bslow-release\s*;/.exec(model.clean.slice(node.body, node.close));
+    if (old) patches.push({start: node.body + old.index, end: node.body + old.index + old[0].length, text: ""});
+    else patches.push({start: node.body, end: node.body, text: "\n            slow-release;"});
+  }
+  return spliceSource(model.source, patches);
+}
+
+
+const $ = (id) => document.getElementById(id);
+const namedCombos = {settings_layer:"設定レイヤー", left_click:"左クリック", right_click:"右クリック", tab_shift_combo:"Shift + Tab", tab_combo:"Tab"};
+const presets = [
+  ["", "割り当ての例を選ぶ"], ["&kp TAB", "Tab"], ["&kp LS(TAB)", "Shift + Tab"], ["&kp ESC", "Esc"],
+  ["&kp ENTER", "Enter"], ["&kp LC(C)", "Ctrl + C"], ["&kp LC(V)", "Ctrl + V"], ["&kp LC(Z)", "Ctrl + Z"],
+  ["&kp LC(S)", "Ctrl + S"], ["&kp SPACE", "Space"], ["&kp BACKSPACE", "Backspace"],
+  ["&kp LEFT_ARROW", "左矢印"], ["&kp RIGHT_ARROW", "右矢印"], ["&kp UP", "上矢印"], ["&kp DOWN", "下矢印"],
+  ["&mkp LCLK", "マウス左クリック"], ["&mkp RCLK", "マウス右クリック"], ["&mkp MCLK", "マウス中央クリック"],
+  ["&lt 3 K", "タップ K・長押しでスクロール"], ["&mo 3", "押している間だけスクロールレイヤー"],
+  ["&mt LCTRL A", "タップ A・長押しで Ctrl"], ["&trans", "下のレイヤーの割り当てを使う"], ["&none", "無効"],
+];
+const state = {
+  tab: "keymap", source: readSource(stockSource), sourceName: "同梱の C4MTB 設定", cleanSource: stockSource,
+  layer: 0, position: 0, keyMode: "file", comboMode: "file", comboName: "left_click", comboPositions: [], comboRuntime: null,
+  busy: false, client: null, unlocked: false, deviceLayers: null, aliases: null, pendingKeys: new Map(),
+  demo: false, pointerOriginal: null, pointerAvailable: false, pointerDraft: null, flashReady: 0,
+};
+
+function alertUser(message = "", kind = "success") {
+  $("alert").textContent = message;
+  $("alert").dataset.kind = kind;
+  $("alert").hidden = !message;
+}
+
+function button(label, classes = "") {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = classes;
+  element.textContent = label;
+  return element;
+}
+
+function fillPresets(select) {
+  for (const [value, label] of presets) select.append(new Option(label, value));
+  for (const [label, list] of [
+    ["英字・数字", [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ...Array.from({length: 10}, (_, i) => "NUMBER_" + i)]],
+    ["ファンクションキー", Array.from({length: 24}, (_, i) => "F" + (i + 1))],
+  ]) {
+    const group = document.createElement("optgroup");
+    group.label = label;
+    for (const code of list) group.append(new Option(code.replace("NUMBER_", ""), "&kp " + code));
+    select.append(group);
+  }
+}
+
+function wirePreset(select, input) {
+  fillPresets(select);
+  select.addEventListener("change", () => {
+    if (select.value) input.value = select.value;
+  });
+  input.addEventListener("input", () => { select.value = ""; });
+}
+
+function renderKeyboard(container, options) {
+  const existing = [...container.querySelectorAll("button")];
+  if (!existing.length) {
+    const ball = document.createElement("span");
+    ball.className = "ball";
+    ball.setAttribute("aria-hidden", "true");
+    container.append(ball);
+    for (const [index, position] of layout.entries()) {
+      const key = button("", "key");
+      // Use the same position ordering as config/info.json and the physical layout.
+      key.style.left = (position.x / 12.2 * 100) + "%";
+      key.style.top = (position.y / 4.36 * 100) + "%";
+      key.style.width = ((position.u || 1) * (position.u ? .70 : .87) / 12.2 * 100) + "%";
+      key.style.height = (19.2) + "%";
+      key.addEventListener("click", () => {
+        if (container.id === "combo-grid") changeComboPosition(index);
+        else selectKey(index);
+      });
+      container.append(key);
+    }
+  }
+  const keys = existing.length ? existing : [...container.querySelectorAll("button")];
+  for (const [index, key] of keys.entries()) {
+    const {raw, label} = options.binding(index);
+    const fullLabel = label === "·" ? "透過" : label;
+    const role = keyRole({raw,label});
+    key.textContent = role.tap;
+    if (role.hold) {
+      const small = document.createElement("small");
+      small.textContent = "長押し " + role.hold;
+      key.append(small);
+    }
+    key.title = "位置 " + (index + 1) + (raw ? " · " + raw : "");
+    key.setAttribute("aria-label", "位置 " + (index + 1) + " " + fullLabel + (role.hold ? " 長押し " + role.hold : ""));
+    key.setAttribute("aria-pressed", options.selected(index));
+    key.dataset.ghost = String(label === "·");
+    key.dataset.change = String(Boolean(options.changed?.(index)));
+    key.disabled = typeof options.disabled === "function" ? options.disabled(index) : options.disabled;
+  }
+}
+
+function fileBinding(layer, index) {
+  const raw = state.source.layers[layer][index].raw;
+  return {raw, label: bindingLabel(raw)};
+}
+
+function currentKey() {
+  if (state.keyMode === "device" && state.deviceLayers) {
+    return formatLive(state.deviceLayers[state.layer].bindings[state.position], state.aliases);
+  }
+  return fileBinding(state.layer, state.position);
+}
+
+function selectKey(position) {
+  state.position = position;
+  renderKeymap(true);
+}
+
+function renderKeymap(resetField = false) {
+  const live = state.keyMode === "device" && Boolean(state.deviceLayers);
+  const available = !state.busy && (!live || state.unlocked);
+  const layers = $("layer-buttons");
+  if (!layers.childElementCount) {
+    for (const [index, name] of layerLabels.entries()) {
+      const layer = button(name);
+      layer.addEventListener("click", () => { state.layer = index; renderKeymap(true); });
+      layers.append(layer);
+    }
+  }
+  for (const [index, layer] of [...layers.children].entries()) layer.setAttribute("aria-pressed", index === state.layer);
+  renderKeyboard($("key-grid"), {
+    binding: (index) => live ? formatLive(state.deviceLayers[state.layer].bindings[index], state.aliases) : fileBinding(state.layer, index),
+    selected: (index) => index === state.position,
+    changed: (index) => live && state.pendingKeys.has(state.layer + ":" + index),
+    disabled: state.busy,
+  });
+  if (resetField) {
+    $("key-binding").value = currentKey().raw;
+    $("key-presets").value = "";
+  }
+  const [x, y] = [layout[state.position].x < 6 ? "左手" : "右手", state.position + 1];
+  $("key-caption").textContent = layerLabels[state.layer] + " レイヤー · " + x + " · 位置 " + y;
+  $("keymap-mode-wrap").hidden = !state.deviceLayers;
+  $("keymap-mode").disabled = state.busy || state.pendingKeys.size > 0;
+  $("keymap-mode").value = live ? "device" : "file";
+  $("keymap-note").textContent = live ? "本体のキー割り当てを表示しています。" : "設定ファイルのキー割り当てを表示しています。";
+  const protectedKey = state.layer === 4 && state.position === 5;
+  $("key-binding").disabled = !available || protectedKey;
+  $("key-presets").disabled = !available || protectedKey;
+  $("apply-key").disabled = !available || protectedKey;
+  $("apply-key").textContent = live ? "実機で試す" : "ファイルに反映";
+  $("save-keys").hidden = $("undo-keys").hidden = !live || state.pendingKeys.size === 0;
+  $("save-keys").disabled = $("undo-keys").disabled = !available;
+  $("key-context").textContent = protectedKey ? "USB接続の解除キーはここに固定しています。" : live ?
+    (state.pendingKeys.size ? state.pendingKeys.size + "件の未保存の変更。「本体に保存」で再起動後も使えます。" : "「実機で試す」で確認できます。必要な変更は本体に保存してください。") :
+    "書き出したファイルからファームウェアを更新すると、既定の配列に反映されます。";
+  details();
+}
+
+const recoveryPositions = [33, 34];
+const recoveryCombo = {id: "settings_layer", name: "settings_layer", raw: "&mo 4",
+  positions: recoveryPositions, timeout: 80, idle: 0, release: 0, layers: []};
+const usesRuntimeCombos = () => state.comboMode === "device" && Boolean(state.comboRuntime);
+
+function comboRows() {
+  if (!usesRuntimeCombos()) return state.source.combos.map((combo) => ({...combo, id: combo.name}));
+  return [recoveryCombo, ...state.comboRuntime.data.combos.filter((combo) => combo.enabled).map((combo) => {
+    const {raw, label} = formatLive(combo.binding, state.aliases);
+    return {...combo, raw, label, id: "slot:" + combo.slot};
+  })];
+}
+
+function changeComboPosition(index) {
+  if (state.comboName === "settings_layer" || usesRuntimeCombos() && recoveryPositions.includes(index)) return;
+  const indexInCombo = state.comboPositions.indexOf(index);
+  if (indexInCombo >= 0) state.comboPositions.splice(indexInCombo, 1);
+  else state.comboPositions.push(index);
+  renderCombo(false);
+}
+
+function selectCombo(id) {
+  state.comboName = id;
+  const original = comboRows().find((combo) => combo.id === id);
+  state.comboPositions = [...(original?.positions ?? [])];
+  $("combo-name").value = original?.name ?? "";
+  $("combo-binding").value = original?.raw ?? "";
+  $("combo-presets").value = "";
+  $("combo-timeout").value = original?.timeout ?? (usesRuntimeCombos() ? 0 : 50);
+  $("combo-idle").value = original?.idle ?? 0;
+  $("combo-slow").checked = original?.slow ?? false;
+  $("combo-release").value = String(original?.release ?? 0);
+  for (const checkbox of $("combo-layers").querySelectorAll("input")) {
+    checkbox.checked = Boolean(original?.layers.includes(Number(checkbox.value)));
+  }
+  renderCombo();
+}
+
+function renderCombo(resetList = true) {
+  const runtime = usesRuntimeCombos();
+  const locked = runtime && !state.unlocked;
+  const protectedCombo = state.comboName === "settings_layer";
+  const rows = comboRows();
+  const baseBinding = (index) => runtime && state.deviceLayers ? formatLive(state.deviceLayers[0].bindings[index], state.aliases) : fileBinding(0, index);
+  if (resetList) {
+    const list = $("combo-list");
+    list.replaceChildren();
+    for (const combo of rows) {
+      const item = button("", "combo-item");
+      const title = document.createElement("strong");
+      title.textContent = namedCombos[combo.name] ?? (combo.name || "コンボ " + (combo.slot + 1));
+      const description = document.createElement("span");
+      description.textContent = combo.positions.map((index) => index < 38 ? baseBinding(index).label : "#" + (index + 1)).join(" + ") +
+        " → " + (combo.raw ? compactBinding(combo.raw) : combo.label);
+      item.append(title, description);
+      item.setAttribute("aria-pressed", combo.id === state.comboName);
+      item.addEventListener("click", () => selectCombo(combo.id));
+      list.append(item);
+    }
+  }
+  renderKeyboard($("combo-grid"), {
+    binding: baseBinding, selected: (index) => state.comboPositions.includes(index),
+    disabled: (index) => protectedCombo || locked || state.busy || runtime && recoveryPositions.includes(index),
+  });
+  const current = rows.find((combo) => combo.id === state.comboName);
+  $("combo-caption").textContent = protectedCombo ? "Studioロック解除のための固定コンボです。" :
+    (current?.name || (current ? "コンボ " + (current.slot + 1) : "新規コンボ")) + " · " + state.comboPositions.length + "キー選択中";
+  $("combo-mode-wrap").hidden = !state.comboRuntime;
+  $("combo-mode").value = runtime ? "device" : "file";
+  $("combo-mode").disabled = state.busy;
+  $("add-combo").disabled = state.busy || locked || runtime && rows.length - 1 >= state.comboRuntime.data.slots;
+  $("combo-note").textContent = runtime ? "本体のコンボを表示中 · " + (rows.length - 1) + " / " + state.comboRuntime.data.slots :
+    "同時押しするキーを配列から選べます。";
+  $("combo-slow-wrap").hidden = runtime;
+  $("combo-release-wrap").hidden = !runtime;
+  $("combo-timeout").min = runtime ? "0" : "1";
+  $("apply-combo").textContent = runtime ? "本体に保存" : "ファイルに反映";
+  $("combo-context").textContent = runtime ? "保存したコンボはすぐに使えます。猶予・直前の入力間隔の 0 は本体の共通設定を使います。" :
+    "書き出した設定を使ってファームウェアを更新すると、本体のコンボに反映されます。";
+  for (const element of $("combo-form").querySelectorAll("input, select, button")) element.disabled = protectedCombo || locked || state.busy;
+  $("delete-combo").hidden = protectedCombo || state.comboName === null;
+}
+
+function updateFile(source, name = state.sourceName, imported = false) {
+  const parsed = readSource(source);
+  state.source = parsed;
+  state.sourceName = name;
+  if (imported) state.cleanSource = source;
+  $("source-name").textContent = name;
+  $("source-status").textContent = source === state.cleanSource ? "ファイルに加えた変更はありません。" : "ファイルを変更しました。書き出してファームウェアのビルドに使えます。";
+}
+
+const pointerSettings = [
+  {name: "mouse", label: "ポインター感度", detail: "通常操作でのカーソルの移動量", value: [5, 4], min: 25, max: 300},
+  {name: "scroll", label: "スクロール速度", detail: "スクロールレイヤーでのホイールの移動量", value: [1, 1], min: 20, max: 250},
+  {name: "zoom", label: "ズーム速度", detail: "ズームレイヤーでのホイールの移動量", value: [1, 4], min: 10, max: 100},
+];
+const stockPointer = Object.fromEntries(pointerSettings.map(({name, value}, id) =>
+  [name, {name, id, numerator: value[0], denominator: value[1], x: false, y: false}]));
+const pointerFields = ["numerator", "denominator", "x", "y"];
+
+function ratio(percent) {
+  let first = percent;
+  let second = 100;
+  while (second) [first, second] = [second, first % second];
+  return {numerator: percent / first, denominator: 100 / first};
+}
+
+function percentOf(value) { return value.numerator * 100 / value.denominator; }
+function samePointer(left, right, name) { return pointerFields.every((key) => left?.[name]?.[key] === right?.[name]?.[key]); }
+function changedPointer(left, right) { return pointerSettings.some(({name}) => !samePointer(left, right, name)); }
+
+function buildSliders() {
+  for (const {name, label, detail, min, max} of pointerSettings) {
+    const row = document.createElement("div");
+    row.className = "slider";
+    const heading = document.createElement("div");
+    heading.className = "slider-head";
+    const title = document.createElement("label");
+    title.htmlFor = "gain-" + name;
+    title.textContent = label;
+    const output = document.createElement("output");
+    output.id = "gain-value-" + name;
+    output.htmlFor = title.htmlFor;
+    heading.append(title, output);
+    const description = document.createElement("p");
+    description.textContent = detail;
+    const input = document.createElement("input");
+    input.id = title.htmlFor;
+    input.type = "range";
+    input.min = min;
+    input.max = max;
+    input.step = 1;
+    input.addEventListener("input", () => {
+      const value = Number(input.value);
+      const original = state.pointerOriginal?.[name] ?? stockPointer[name];
+      const target = value === Math.round(percentOf(original)) ? original : ratio(value);
+      Object.assign(state.pointerDraft[name], {numerator: target.numerator, denominator: target.denominator});
+      updatePointerUI();
+    });
+    const ends = document.createElement("div");
+    ends.className = "slider-ends";
+    for (const label of ["低速", "高速"]) {
+      const edge = document.createElement("span");
+      edge.textContent = label;
+      ends.append(edge);
+    }
+    row.append(heading, description, input, ends);
+    $("sliders").append(row);
+  }
+  for (const axis of ["x", "y"]) $("invert-" + axis).addEventListener("change", (event) => {
+    state.pointerDraft.scroll[axis] = event.target.checked;
+    updatePointerUI();
+  });
+}
+
+function updatePointerUI() {
+  const hardware = state.pointerAvailable && Boolean(state.client);
+  const ready = hardware && state.unlocked && !state.busy && Date.now() >= state.flashReady;
+  const enabled = ready || state.demo && !state.busy;
+  const values = state.pointerDraft ?? stockPointer;
+  const applied = state.client?.pointerState;
+  const original = state.pointerOriginal ?? stockPointer;
+  const draftChanged = changedPointer(values, original);
+  const previewing = hardware && applied && changedPointer(applied, original);
+  const needsPreview = applied && changedPointer(values, applied);
+  $("demo").hidden = Boolean(state.client);
+  $("demo").disabled = state.busy;
+  $("demo").textContent = state.demo ? "デモを終了" : "デモで試す";
+  $("pointer-note").textContent = state.demo ? "画面上だけのデモです。USB接続後は本体の設定を読み込みます。" :
+    hardware ? (previewing ? "本体で試用中です。再起動後も使うには保存してください。" : "右手側の本体設定を読み込みました。") :
+    (state.client ? "接続中のファームウェアからトラックボール設定を読み込めませんでした。" : "接続前は標準値を表示しています。");
+  for (const {name, min, max} of pointerSettings) {
+    const number = percentOf(values[name]);
+    const input = $("gain-" + name);
+    input.min = Math.min(min, Math.round(number));
+    input.max = Math.max(max, Math.round(number));
+    input.value = Math.round(number);
+    input.disabled = !enabled;
+    $("gain-value-" + name).textContent = new Intl.NumberFormat("ja", {maximumFractionDigits: 2}).format(number / 100) + "×";
+  }
+  for (const axis of ["x", "y"]) {
+    $("invert-" + axis).checked = values.scroll[axis];
+    $("invert-" + axis).disabled = !enabled;
+  }
+  $("try-pointer").disabled = !ready || !needsPreview;
+  $("save-pointer").disabled = !ready || !draftChanged;
+  $("undo-pointer").disabled = !enabled || !(draftChanged || previewing);
+}
+
+function refreshChrome() {
+  const status = $("connection-status");
+  status.dataset.state = state.client ? state.unlocked ? "active" : "locked" : "offline";
+  status.lastElementChild.textContent = state.client ? state.unlocked ? "C4MTB 接続中" : "ロック中" : "未接続";
+  $("connect").disabled = state.busy;
+  $("connect").textContent = state.client ? "切断" : "USBで接続";
+  $("check-lock").disabled = state.busy;
+  $("unlock").hidden = !state.client || state.unlocked;
+  $("import").disabled = state.busy;
+  renderKeymap();
+  renderCombo(false);
+  updatePointerUI();
+}
+
+function showTab(name) {
+  if (!["keymap", "combos", "trackball"].includes(name)) name = "keymap";
+  state.tab = name;
+  for (const element of document.querySelectorAll("[data-tab]")) {
+    if (element.dataset.tab === name) element.setAttribute("aria-current", "page");
+    else element.removeAttribute("aria-current");
+    $(element.dataset.tab + "-panel").hidden = element.dataset.tab !== name;
+  }
+  $("source-footer").hidden = name === "trackball" || name === "keymap" && state.keyMode === "device" || name === "combos" && usesRuntimeCombos();
+}
+
+async function run(task) {
+  if (state.busy) return;
+  state.busy = true;
+  refreshChrome();
+  alertUser();
+  try {
+    await task();
+  } catch (error) {
+    if (error.name !== "NotFoundError") alertUser(error.message || "操作を完了できませんでした。", "error");
+  } finally {
+    state.busy = false;
+    refreshChrome();
+  }
+}
+
+function resetDevice() {
+  state.keySaved = false;
+  state.client = null;
+  state.unlocked = false;
+  state.demo = false;
+  state.deviceLayers = null;
+  state.aliases = null;
+  state.pendingKeys.clear();
+  state.keyMode = "file";
+  state.comboMode = "file";
+  state.comboRuntime = null;
+  selectCombo(state.source.combos.find(({name}) => name !== "settings_layer")?.name ?? null);
+  state.pointerAvailable = false;
+  state.pointerDraft = state.pointerOriginal = null;
+  state.flashReady = 0;
+  renderKeymap(true);
+  showTab(state.tab);
+  refreshChrome();
+}
+
+async function loadKeys(client) {
+  if (!state.unlocked || state.deviceLayers) return;
+  const aliases = await client.readAliases();
+  if (![...aliases.values()].some(({alias}) => alias === "kp")) {
+    throw new Error("本体のキー割り当てを読み込めませんでした。ファイル編集を使ってください。");
+  }
+  const layers = await client.readBindings();
+  if (state.client !== client) return;
+  state.aliases = aliases;
+  state.deviceLayers = layers;
+  state.keyMode = "device";
+  renderKeymap(true);
+  showTab(state.tab);
+}
+
+async function loadLiveSettings(client) {
+  await loadKeys(client);
+  if (!state.unlocked || state.comboRuntime || !client.subsystems.has(COMBO_SERVICE)) return;
+  const rpc = new HardwareCombos(client);
+  const data = await rpc.read();
+  if (state.client !== client) return;
+  state.comboRuntime = {rpc, data};
+  state.comboMode = "device";
+  selectCombo(data.combos.filter((combo) => combo.enabled).map((combo) => "slot:" + combo.slot)[0] ?? null);
+  showTab(state.tab);
+}
+
+function lockChanged(client, unlocked) {
+  if (state.client !== client) return;
+  state.unlocked = unlocked;
+  refreshChrome();
+  if (unlocked && (!state.deviceLayers || !state.comboRuntime && client.subsystems.has(COMBO_SERVICE)) && !state.busy) void run(() => loadLiveSettings(client));
+}
+
+async function connectDevice() {
+  if (!navigator.serial || !window.isSecureContext) {
+    throw new Error("USB編集には、デスクトップ版Chrome／EdgeでHTTPSのURLまたはダウンロードしたHTMLを開いてください。");
+  }
+  const port = await navigator.serial.requestPort();
+  const client = new StudioPort(port, (unlocked) => lockChanged(client, unlocked), () => {
+    if (client === state.client) {
+      resetDevice();
+      alertUser("USB接続が切れました。本体の保存状態は再接続して確認してください。", "error");
+    }
+  });
+  try {
+    await client.open();
+    if ((await client.name()).trim().toLowerCase() !== "c4mtb") {
+      throw new Error("C4MTB右手側を選択してください。");
+    }
+    await client.discover();
+    const unlocked = await client.unlocked();
+    state.client = client;
+    state.unlocked = unlocked;
+    state.demo = false;
+    state.pointerDraft = null;
+  } catch (error) {
+    await client.close();
+    throw error;
+  }
+  const errors = [];
+  try {
+    const values = await client.readPointer();
+    if (state.client !== client) return;
+    client.pointerState = values;
+    state.pointerOriginal = structuredClone(values);
+    state.pointerDraft = structuredClone(values);
+    state.pointerAvailable = true;
+  } catch (error) {
+    errors.push("トラックボール: " + error.message);
+  }
+  try {
+    await loadLiveSettings(client);
+  } catch (error) {
+    errors.push("キーマップ・コンボ: " + error.message);
+  }
+  if (errors.length) alertUser(errors.join(" "), "error");
+  else if (state.client === client && state.unlocked) alertUser("C4MTBの設定を読み込みました。");
+}
+
+function hasLocalPreview() {
+  return state.pendingKeys.size > 0 || state.pointerAvailable && state.client?.pointerState &&
+    changedPointer(state.client.pointerState, state.pointerOriginal);
+}
+
+async function disconnectDevice() {
+  if (hasLocalPreview() && !confirm("試用中の変更が本体に残っています。保存していない変更は再起動すると戻ります。切断しますか？")) return;
+  const client = state.client;
+  await client.close();
+  resetDevice();
+  alertUser("USB接続を切断しました。");
+}
+
+async function applyKey() {
+  const raw = validateSourceBinding($("key-binding").value);
+  const {layer, position} = state;
+  if (layer === 4 && position === 5) throw new Error("USBの解除キーはここに固定しています。");
+  if (state.keyMode === "file") {
+    const {start, end} = state.source.layers[layer][position];
+    updateFile(spliceSource(state.source.source, [{start, end, text: raw}]));
+    renderKeymap(true);
+    renderCombo();
+    alertUser("キー割り当てをファイルに反映しました。");
+    return;
+  }
+  const client = state.client;
+  if (!state.unlocked) throw new Error("本体のStudioロックを解除してください。");
+  if (!state.pendingKeys.size && await client.hasUnsavedKeys()) {
+    throw new Error("本体に別の未保存の変更があります。以前の設定画面で保存または取り消してから、再接続してください。");
+  }
+  const next = liveBinding(raw, state.aliases);
+  const previous = state.deviceLayers[layer].bindings[position];
+  if (["id", "p1", "p2"].every((key) => previous[key] === next[key])) return;
+  await client.setBinding(layer, position, next);
+  const token = layer + ":" + position;
+  if (!state.pendingKeys.has(token)) state.pendingKeys.set(token, previous);
+  state.deviceLayers[layer].bindings[position] = next;
+  renderKeymap(true);
+  alertUser("キー割り当てを本体に反映しました。入力テストで試せます。");
+}
+
+async function finishKeys(save) {
+  const client = state.client;
+  if (save) {
+    await client.saveKeys();
+    if (await client.hasUnsavedKeys()) throw new Error("本体に未保存のキー割り当てが残っています。");
+  } else {
+    if ((await client.keymap(5)).get(5) !== 1) throw new Error("本体の変更を取り消せませんでした。");
+  }
+  state.pendingKeys.clear();
+  state.keySaved = save;
+  state.deviceLayers = await client.readBindings();
+  renderKeymap(true);
+  alertUser(save ? "キー割り当てを本体に保存しました。" : "本体のキー割り当てを保存済みの状態に戻しました。");
+}
+
+function comboDraft(original, rows) {
+  const runtime = usesRuntimeCombos();
+  const name = $("combo-name").value.trim();
+  const raw = validateSourceBinding($("combo-binding").value);
+  const timeout = $("combo-timeout").valueAsNumber;
+  const idle = $("combo-idle").valueAsNumber;
+  const positions = [...state.comboPositions].sort((first, second) => first - second);
+  const layers = [...$("combo-layers").querySelectorAll("input:checked")].map((input) => Number(input.value));
+  const slow = $("combo-slow").checked;
+  const release = Number($("combo-release").value);
+  if (runtime) {
+    if (!name || new TextEncoder().encode(name).length > 63) throw new Error("コンボの名前は全角21字、半角63字を目安に入力してください。");
+    if (positions.length > 16) throw new Error("本体のコンボには最大16キーを選べます。");
+    if (positions.some((position) => recoveryPositions.includes(position))) throw new Error("左右の内側の拡張キーはStudioを解除するために予約されています。");
+    if (/^&(bootloader|sys_reset|studio_unlock)\b/.test(raw)) throw new Error("本体のリセット・接続解除に使う動作はコンボに登録できません。");
+  } else if (!/^[a-zA-Z_][\w-]*$/.test(name) || name === "settings_layer") {
+    throw new Error("コンボの名前は英字または _ で始め、英数字、_、- を使ってください。");
+  }
+  if (positions.length < 2) throw new Error("同時押しするキーを2個以上選んでください。");
+  const minTimeout = runtime ? 0 : 1;
+  if (!Number.isInteger(timeout) || timeout < minTimeout || timeout > 5000) throw new Error("同時押しの猶予に" + minTimeout + "〜5000 msを入力してください。");
+  if (!Number.isInteger(idle) || idle < 0 || idle > 5000) throw new Error("直前の入力間隔に0〜5000 msを入力してください。");
+  for (const existing of rows) {
+    if (existing.id === original?.id) continue;
+    if (existing.name === name) throw new Error("同じ名前のコンボがすでにあります。");
+    const sameChord = existing.positions.length === positions.length && existing.positions.every((position) => positions.includes(position));
+    const overlap = !layers.length || !existing.layers.length || layers.some((layer) => existing.layers.includes(layer));
+    if (sameChord && overlap) throw new Error("同じキーの組み合わせが「" + (namedCombos[existing.name] ?? existing.name) + "」と重複しています。");
+  }
+  return {name, raw, timeout, idle, positions, layers, slow, release};
+}
+
+async function refreshComboDevice() {
+  if (!state.unlocked) throw new Error("本体のStudioロックを解除してください。");
+  const runtime = state.comboRuntime;
+  const next = await runtime.rpc.read();
+  if (runtime !== state.comboRuntime) throw new Error("USB接続が切れました。");
+  const changed = JSON.stringify(next) !== JSON.stringify(runtime.data);
+  runtime.data = next;
+  return {runtime, changed};
+}
+
+async function applyCombo() {
+  if (state.comboName === "settings_layer") return;
+  const rows = comboRows();
+  const original = rows.find((combo) => combo.id === state.comboName);
+  const draft = comboDraft(original, rows);
+  if (!usesRuntimeCombos()) {
+    updateFile(editCombo(state.source, original, draft));
+    selectCombo(draft.name);
+    alertUser("コンボをファイルに反映しました。書き出してファームウェアのビルドに使えます。");
+    return;
+  }
+  const {runtime, changed} = await refreshComboDevice();
+  if (changed) {
+    selectCombo(comboRows().some((combo) => combo.id === state.comboName) ? state.comboName : null);
+    throw new Error("別の操作で本体のコンボが変更されました。最新の設定を確認してください。");
+  }
+  const occupied = new Set(runtime.data.combos.filter((combo) => combo.enabled).map((combo) => combo.slot));
+  const slot = original?.slot ?? Array.from({length: runtime.data.slots}, (_, index) => index).find((index) => !occupied.has(index));
+  if (slot === undefined) throw new Error("コンボの空き枠がありません。");
+  const binding = liveBinding(draft.raw, state.aliases);
+  let operationError;
+  try {
+    await runtime.rpc.write(slot, {...draft, writeName: draft.name !== original?.name}, binding);
+  } catch (error) {
+    operationError = error;
+  }
+  await refreshComboDevice();
+  const saved = runtime.data.combos.find((combo) => combo.slot === slot && combo.enabled);
+  selectCombo(saved ? "slot:" + slot : null);
+  if (operationError) throw operationError;
+  if (!saved || ["name", "timeout", "idle", "release"].some((key) => saved[key] !== draft[key]) ||
+      ["positions", "layers"].some((key) => saved[key].join(",") !== draft[key].join(",")) ||
+      ["id", "p1", "p2"].some((key) => saved.binding[key] !== binding[key])) {
+    throw new Error("保存後の読み取り結果が一致しませんでした。本体の設定を確認してください。");
+  }
+  alertUser("コンボを本体に保存しました。");
+}
+
+async function deleteCombo() {
+  const original = comboRows().find(({id}) => id === state.comboName);
+  if (!original || original.id === "settings_layer") return;
+  const runtimeMode = usesRuntimeCombos();
+  if (!confirm("「" + original.name + "」を" + (runtimeMode ? "本体" : "設定ファイル") + "から削除しますか？")) return;
+  if (runtimeMode) {
+    const {runtime, changed} = await refreshComboDevice();
+    if (changed) {
+      selectCombo(null);
+      throw new Error("別の操作で本体のコンボが変更されました。最新の設定を確認してください。");
+    }
+    await runtime.rpc.delete(original.slot);
+    await refreshComboDevice();
+    if (runtime.data.combos.some((combo) => combo.slot === original.slot && combo.enabled)) throw new Error("本体から削除できませんでした。");
+  } else {
+    const {start, end} = original.node;
+    const lineStart = state.source.source.lastIndexOf("\n", start - 1) + 1;
+    updateFile(spliceSource(state.source.source, [{start: /^\s*$/.test(state.source.source.slice(lineStart, start)) ? lineStart : start, end, text: ""}]));
+  }
+  selectCombo(comboRows().find(({id}) => id !== "settings_layer")?.id ?? null);
+  alertUser(runtimeMode ? "コンボを本体から削除しました。" : "コンボを設定ファイルから削除しました。");
+}
+
+async function applyPointer(action) {
+  const original = state.pointerOriginal;
+  if (state.demo && action === "undo") {
+    state.pointerDraft = structuredClone(stockPointer);
+    return;
+  }
+  const client = state.client;
+  if (!client || !state.unlocked || !state.pointerAvailable || Date.now() < state.flashReady) return;
+  const actual = await client.readPointer();
+  if (changedPointer(actual, client.pointerState)) {
+    client.pointerState = actual;
+    state.pointerOriginal = structuredClone(actual);
+    state.pointerDraft = structuredClone(actual);
+    throw new Error("本体の設定が別の操作で変更されたため、現在の値を読み込み直しました。");
+  }
+  const target = action === "undo" ? original : state.pointerDraft;
+  const save = action === "save";
+  try {
+    for (const {name} of pointerSettings) {
+      const desired = target[name];
+      const baseline = original[name];
+      const persistGain = save && (desired.numerator !== baseline.numerator || desired.denominator !== baseline.denominator);
+      const persistX = save && desired.x !== baseline.x;
+      const persistY = save && desired.y !== baseline.y;
+      if (!samePointer(target, actual, name) || persistGain || persistX || persistY) {
+        await client.writePointer(name, {...desired, persistGain, persistX, persistY}, save);
+        if (save) original[name] = structuredClone(client.pointerState[name]);
+      }
+    }
+  } catch (error) {
+    if (state.client === client) {
+      try { client.pointerState = await client.readPointer(); } catch {}
+    }
+    throw error;
+  } finally {
+    if (save && state.client === client) {
+      state.flashReady = Date.now() + 10000;
+      setTimeout(updatePointerUI, 10010);
+    }
+  }
+  if (action === "undo") state.pointerDraft = structuredClone(original);
+  const outcomes = {save:"本体に保存を指示しました。電源を切るまで10秒ほど待ってください。",
+    try:"本体に反映しました。試してから、必要なら本体に保存してください。試用中は本体の感度切替キーや別の設定画面の操作を控えてください。",
+    undo:"読み込み時の値に戻しました。"};
+  alertUser(outcomes[action]);
+}
+
+
+function keyRole(binding) {
+  const [kind,arg] = (binding.raw || "").split(/\s+/);
+  const clicks = {LCLK:"左クリック",RCLK:"右クリック",MCLK:"中央クリック"};
+  return {tap:kind === "&mkp" ? clicks[arg] || binding.label : binding.label,
+    hold:kind === "&lt" ? layerLabels[arg] : kind === "&mt" ? bindingLabel("&kp " + arg) : ""};
+}
+function bindingAt(layer,pos) {
+  return state.keyMode === "device" ? formatLive(state.deviceLayers[layer].bindings[pos],state.aliases) : fileBinding(layer,pos);
+}
+function visibleCombos() {
+  if(state.keyMode === "file") return state.source.combos;
+  if(!state.comboRuntime) return [];
+  return [recoveryCombo,...state.comboRuntime.data.combos.filter(c=>c.enabled).map(c=>({...c,...formatLive(c.binding,state.aliases)}))];
+}
+function comboTitle(c,layer) {
+  const result = c.raw ? keyRole({raw:c.raw,label:bindingLabel(c.raw)}).tap : c.label;
+  return c.positions.map(i=>i<layout.length ? bindingAt(layer,i).label : "#"+(i+1)).join(" + ")+" → "+result;
+}
+let selectedMatch = "";
+function searchActions() {
+  const norm = s=>s.normalize("NFKC").toLowerCase().replace(/[\s+_-]/g,"");
+  const query = norm($("lookup").value.trim());
+  const list=$("matches"), rows=[];
+  list.replaceChildren();
+  function match(layer,positions,title,terms) {
+    if(norm(title+" "+terms).includes(query)) rows.push({layer,positions,title});
+  }
+  if(query) {
+    for(const [layer,name] of layerLabels.entries()) {
+      for(let i=0;i<layout.length;i++) {
+        const b=bindingAt(layer,i), d=keyRole(b);
+        match(layer,[i],d.tap+(d.hold ? " · 長押し "+d.hold : ""),b.raw);
+      }
+    }
+    for(const c of visibleCombos()) for(const layer of c.layers.length ? c.layers : [state.layer]) {
+      if(layerLabels[layer]) match(layer,c.positions,comboTitle(c,layer)+(c.layers.length?"":"（全レイヤー）"),[c.name,c.raw,namedCombos[c.name]].join(" "));
+    }
+    if(!rows.length) list.textContent="一致する動作がありません。";
+  }
+  const hits=new Set(), layers=new Set();
+  for(const r of rows) {
+    const id=[r.layer,r.positions.join(","),r.title].join("/");
+    layers.add(r.layer);
+    if(r.layer===state.layer && (!selectedMatch || selectedMatch===id)) r.positions.forEach(i=>hits.add(i));
+    const b=button(layerLabels[r.layer]+"　"+r.title+"　·　位置 "+r.positions.map(i=>i+1).join("・"));
+    b.disabled=state.busy;
+    b.onclick=()=>{state.layer=r.layer; selectedMatch=id; selectKey(r.positions[0]);};
+    list.append(b);
+  }
+  [...$("layer-buttons").children].forEach((k,i)=>k.dataset.hit=layers.has(i));
+  [...$("key-grid").querySelectorAll("button")].forEach((k,i)=>k.dataset.hit=hits.has(i));
+}
+function saveState() {
+  const live=state.keyMode==="device", current=currentKey(), draft=$("key-binding").value.trim();
+  const editing=draft!==current.raw, lines=[];
+  for(const [token,before] of state.pendingKeys) {
+    const [layer,pos]=token.split(":").map(Number), old=formatLive(before,state.aliases), next=bindingAt(layer,pos);
+    lines.push(layerLabels[layer]+"・位置 "+(pos+1)+"　"+(old.raw||old.label)+" → "+(next.raw||next.label));
+  }
+  let title=live ? (state.keySaved?"本体に保存済み":"本体から読み込み済み") : (state.cleanSource===state.source.source?"設定ファイルを表示中":"設定ファイルに変更あり");
+  if(editing) title=live?"編集中・実機には未反映":"編集中・ファイルには未反映";
+  if(lines.length) title="実機で試用中・未保存 "+lines.length+"件";
+  if(editing) lines.push("編集中　"+(current.raw||current.label)+" → "+(draft||"未入力"));
+  $("stage").textContent=title;
+  $("status-detail").textContent=lines.join("\n");
+  $("save-state").dataset.pending=Boolean(lines.length);
+}
+function details() {
+  const d=keyRole(currentKey());
+  $("role").textContent=d.hold?"短押し "+d.tap+"　／　長押し "+d.hold:d.tap;
+  const rows=visibleCombos().filter(c=>c.positions.includes(state.position));
+  $("related").textContent="このキーを使うコンボ\n"+(rows.map(c=>comboTitle(c,c.layers.length&&!c.layers.includes(state.layer)?c.layers[0]:state.layer)+" · "+(c.layers.length?c.layers.map(l=>layerLabels[l]).join("・"):"全レイヤー")).join("\n")||(state.keyMode==="device"&&!state.comboRuntime?"本体から読み取り不可":"登録なし"));
+  searchActions(); saveState();
+}
+wirePreset($("key-presets"), $("key-binding"));
+$("key-binding").addEventListener("input",saveState);
+$("key-presets").addEventListener("change",saveState);
+$("lookup").addEventListener("input",()=>{selectedMatch="";searchActions();});
+wirePreset($("combo-presets"), $("combo-binding"));
+for (const [index, label] of layerLabels.entries()) {
+  const element = document.createElement("label");
+  element.className = "check";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.value = index;
+  element.append(input, label);
+  $("combo-layers").append(element);
+}
+buildSliders();
+updateFile(stockSource);
+selectCombo(state.comboName);
+renderKeymap(true);
+updatePointerUI();
+showTab(location.hash.slice(1));
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+
+$("connect").addEventListener("click", () => run(state.client ? disconnectDevice : connectDevice));
+$("check-lock").addEventListener("click", () => run(async () => {
+  const client = state.client;
+  lockChanged(client, await client.unlocked());
+  if (state.unlocked) await loadLiveSettings(client);
+  else alertUser("本体のロックが有効です。上の手順でロックを解除してください。", "error");
+}));
+$("keymap-mode").addEventListener("change", () => {
+  state.keyMode = $("keymap-mode").value;
+  renderKeymap(true);
+  showTab(state.tab);
+});
+$("apply-key").addEventListener("click", () => run(applyKey));
+$("save-keys").addEventListener("click", () => run(() => finishKeys(true)));
+$("undo-keys").addEventListener("click", () => run(() => finishKeys(false)));
+$("key-binding").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.isComposing) {
+    event.preventDefault();
+    $("apply-key").click();
+  }
+});
+$("clear-test").addEventListener("click", () => { $("key-test").value = ""; $("key-test").focus(); });
+
+$("add-combo").addEventListener("click", () => {
+  selectCombo(null);
+  $("combo-name").focus();
+});
+$("combo-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  void run(applyCombo);
+});
+$("delete-combo").addEventListener("click", () => run(deleteCombo));
+$("combo-mode").addEventListener("change", () => {
+  state.comboMode = $("combo-mode").value;
+  selectCombo(comboRows().find(({id}) => id !== "settings_layer")?.id ?? null);
+  showTab(state.tab);
+});
+
+$("import").addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  event.target.value = "";
+  if (!file || state.source.source !== state.cleanSource && !confirm("画面上のファイル編集を破棄し、選んだ設定ファイルを開きますか？")) return;
+  void run(async () => {
+    if (file.size > 512 * 1024) throw new Error("C4MTBの .keymap ファイルを選んでください。");
+    updateFile(await file.text(), file.name, true);
+    if (!state.pendingKeys.size) state.keyMode = "file";
+    state.comboMode = "file";
+    selectCombo(state.source.combos.find(({name}) => name !== "settings_layer")?.name ?? null);
+    renderKeymap(true);
+    showTab(state.tab);
+    alertUser("設定ファイルを開きました。");
+  });
+});
+$("download").addEventListener("click", () => {
+  const url = URL.createObjectURL(new Blob([state.source.source], {type:"text/plain;charset=utf-8"}));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "c4mtb.keymap";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  state.cleanSource = state.source.source;
+  updateFile(state.source.source);
+  alertUser("c4mtb.keymap を書き出しました。コンボの本体反映にはファームウェアの更新が必要です。");
+});
+
+$("demo").addEventListener("click", () => {
+  state.demo = !state.demo;
+  state.pointerDraft = state.demo ? structuredClone(stockPointer) : null;
+  updatePointerUI();
+});
+$("try-pointer").addEventListener("click", () => run(() => applyPointer("try")));
+$("save-pointer").addEventListener("click", () => run(() => applyPointer("save")));
+$("undo-pointer").addEventListener("click", () => run(() => applyPointer("undo")));
+let testScale = 100;
+$("pointer-test").addEventListener("wheel", (event) => {
+  if (!event.ctrlKey) return;
+  event.preventDefault();
+  testScale = Math.min(200, Math.max(30, testScale + (event.deltaY < 0 ? 5 : -5)));
+  $("target").style.transform = "scale(" + testScale / 100 + ")";
+  $("test-scale").textContent = testScale + "%";
+}, {passive:false});
+window.addEventListener("beforeunload", (event) => {
+  if (hasLocalPreview() || state.source.source !== state.cleanSource) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+
+</script>
+</body>
+<!--
+C4MTB Config is distributed under GPL-3.0. This HTML includes the app source.
+Stock keymap and geometry are from https://github.com/iwmsl/c4mtb-keymap/tree/8f7c359914b98914a3e9574e8aefc93c7c33b931
+ZMK Studio framing and protobuf fields follow the ZMK and Cormoran protocol definitions.
+Upstream: https://github.com/cormoran/zmk-studio-messages and https://github.com/cormoran/zmk-module-runtime-input-processor
+
+# Third-party attribution
+
+The C4MTB project uses [roBa](https://github.com/kumamuk-git/roBa) by kumamuk as its implementation base (GPL-3.0). The key layout was developed with reference to [Corne V4 (crkbd)](https://github.com/foostan/crkbd) by foostan (MIT / CC BY 4.0).
+
+This repository contains the C4MTB ZMK firmware configuration, keymap and editor layout. The C4MTB-specific files are licensed under GPL-3.0. See [LICENSE](LICENSE). Upstream material retains its respective attribution and license conditions.
+
+## Firmware dependencies
+
+The ZMK and Zephyr forks and Studio modules are maintained by [cormoran](https://github.com/cormoran) and their upstream contributors. The firmware configuration references [zmk-config-dya-studio-sample](https://github.com/cormoran/zmk-config-dya-studio-sample) at `e4ab61d5797e9216c1f66cac02562caa7acc3d4f`. West fetches the dependencies listed in [config/west-dependency.yml](config/west-dependency.yml) under their respective upstream licenses, including [zmk-scroll-snap](https://github.com/iwmsl/zmk-scroll-snap) at `v1`.
+
+## PMW3610 recovery patch
+
+[The patch](patches/pmw3610-recovery.patch) adapts `src/pmw3610.c` and `src/pixart.h` from [cormoran's PMW3610 driver](https://github.com/cormoran/zmk-driver-pmw3610-with-custom-studio-rpc) at `5c34ea0eec246a1c986111417cd779b53144629a`. It adds serialized SPI access, error handling and periodic recovery. Copyright (c) 2022 The ZMK Contributors. See the [upstream MIT license](patches/PMW3610-LICENSE).
+
+The optional USB combo build uses [zmk-feature-runtime-combo](https://github.com/cormoran/zmk-feature-runtime-combo) at `d9490e7b5d41c516221d131241009e81740efcee` (MIT). The local [patch](patches/runtime-combo-lock.patch) requires Studio unlock and reserves the two recovery positions.
+
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 3, 29 June 2007
+
+ Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+
+                            Preamble
+
+  The GNU General Public License is a free, copyleft license for
+software and other kinds of works.
+
+  The licenses for most software and other practical works are designed
+to take away your freedom to share and change the works.  By contrast,
+the GNU General Public License is intended to guarantee your freedom to
+share and change all versions of a program--to make sure it remains free
+software for all its users.  We, the Free Software Foundation, use the
+GNU General Public License for most of our software; it applies also to
+any other work released this way by its authors.  You can apply it to
+your programs, too.
+
+  When we speak of free software, we are referring to freedom, not
+price.  Our General Public Licenses are designed to make sure that you
+have the freedom to distribute copies of free software (and charge for
+them if you wish), that you receive source code or can get it if you
+want it, that you can change the software or use pieces of it in new
+free programs, and that you know you can do these things.
+
+  To protect your rights, we need to prevent others from denying you
+these rights or asking you to surrender the rights.  Therefore, you have
+certain responsibilities if you distribute copies of the software, or if
+you modify it: responsibilities to respect the freedom of others.
+
+  For example, if you distribute copies of such a program, whether
+gratis or for a fee, you must pass on to the recipients the same
+freedoms that you received.  You must make sure that they, too, receive
+or can get the source code.  And you must show them these terms so they
+know their rights.
+
+  Developers that use the GNU GPL protect your rights with two steps:
+(1) assert copyright on the software, and (2) offer you this License
+giving you legal permission to copy, distribute and/or modify it.
+
+  For the developers' and authors' protection, the GPL clearly explains
+that there is no warranty for this free software.  For both users' and
+authors' sake, the GPL requires that modified versions be marked as
+changed, so that their problems will not be attributed erroneously to
+authors of previous versions.
+
+  Some devices are designed to deny users access to install or run
+modified versions of the software inside them, although the manufacturer
+can do so.  This is fundamentally incompatible with the aim of
+protecting users' freedom to change the software.  The systematic
+pattern of such abuse occurs in the area of products for individuals to
+use, which is precisely where it is most unacceptable.  Therefore, we
+have designed this version of the GPL to prohibit the practice for those
+products.  If such problems arise substantially in other domains, we
+stand ready to extend this provision to those domains in future versions
+of the GPL, as needed to protect the freedom of users.
+
+  Finally, every program is threatened constantly by software patents.
+States should not allow patents to restrict development and use of
+software on general-purpose computers, but in those that do, we wish to
+avoid the special danger that patents applied to a free program could
+make it effectively proprietary.  To prevent this, the GPL assures that
+patents cannot be used to render the program non-free.
+
+  The precise terms and conditions for copying, distribution and
+modification follow.
+
+                       TERMS AND CONDITIONS
+
+  0. Definitions.
+
+  "This License" refers to version 3 of the GNU General Public License.
+
+  "Copyright" also means copyright-like laws that apply to other kinds of
+works, such as semiconductor masks.
+
+  "The Program" refers to any copyrightable work licensed under this
+License.  Each licensee is addressed as "you".  "Licensees" and
+"recipients" may be individuals or organizations.
+
+  To "modify" a work means to copy from or adapt all or part of the work
+in a fashion requiring copyright permission, other than the making of an
+exact copy.  The resulting work is called a "modified version" of the
+earlier work or a work "based on" the earlier work.
+
+  A "covered work" means either the unmodified Program or a work based
+on the Program.
+
+  To "propagate" a work means to do anything with it that, without
+permission, would make you directly or secondarily liable for
+infringement under applicable copyright law, except executing it on a
+computer or modifying a private copy.  Propagation includes copying,
+distribution (with or without modification), making available to the
+public, and in some countries other activities as well.
+
+  To "convey" a work means any kind of propagation that enables other
+parties to make or receive copies.  Mere interaction with a user through
+a computer network, with no transfer of a copy, is not conveying.
+
+  An interactive user interface displays "Appropriate Legal Notices"
+to the extent that it includes a convenient and prominently visible
+feature that (1) displays an appropriate copyright notice, and (2)
+tells the user that there is no warranty for the work (except to the
+extent that warranties are provided), that licensees may convey the
+work under this License, and how to view a copy of this License.  If
+the interface presents a list of user commands or options, such as a
+menu, a prominent item in the list meets this criterion.
+
+  1. Source Code.
+
+  The "source code" for a work means the preferred form of the work
+for making modifications to it.  "Object code" means any non-source
+form of a work.
+
+  A "Standard Interface" means an interface that either is an official
+standard defined by a recognized standards body, or, in the case of
+interfaces specified for a particular programming language, one that
+is widely used among developers working in that language.
+
+  The "System Libraries" of an executable work include anything, other
+than the work as a whole, that (a) is included in the normal form of
+packaging a Major Component, but which is not part of that Major
+Component, and (b) serves only to enable use of the work with that
+Major Component, or to implement a Standard Interface for which an
+implementation is available to the public in source code form.  A
+"Major Component", in this context, means a major essential component
+(kernel, window system, and so on) of the specific operating system
+(if any) on which the executable work runs, or a compiler used to
+produce the work, or an object code interpreter used to run it.
+
+  The "Corresponding Source" for a work in object code form means all
+the source code needed to generate, install, and (for an executable
+work) run the object code and to modify the work, including scripts to
+control those activities.  However, it does not include the work's
+System Libraries, or general-purpose tools or generally available free
+programs which are used unmodified in performing those activities but
+which are not part of the work.  For example, Corresponding Source
+includes interface definition files associated with source files for
+the work, and the source code for shared libraries and dynamically
+linked subprograms that the work is specifically designed to require,
+such as by intimate data communication or control flow between those
+subprograms and other parts of the work.
+
+  The Corresponding Source need not include anything that users
+can regenerate automatically from other parts of the Corresponding
+Source.
+
+  The Corresponding Source for a work in source code form is that
+same work.
+
+  2. Basic Permissions.
+
+  All rights granted under this License are granted for the term of
+copyright on the Program, and are irrevocable provided the stated
+conditions are met.  This License explicitly affirms your unlimited
+permission to run the unmodified Program.  The output from running a
+covered work is covered by this License only if the output, given its
+content, constitutes a covered work.  This License acknowledges your
+rights of fair use or other equivalent, as provided by copyright law.
+
+  You may make, run and propagate covered works that you do not
+convey, without conditions so long as your license otherwise remains
+in force.  You may convey covered works to others for the sole purpose
+of having them make modifications exclusively for you, or provide you
+with facilities for running those works, provided that you comply with
+the terms of this License in conveying all material for which you do
+not control copyright.  Those thus making or running the covered works
+for you must do so exclusively on your behalf, under your direction
+and control, on terms that prohibit them from making any copies of
+your copyrighted material outside their relationship with you.
+
+  Conveying under any other circumstances is permitted solely under
+the conditions stated below.  Sublicensing is not allowed; section 10
+makes it unnecessary.
+
+  3. Protecting Users' Legal Rights From Anti-Circumvention Law.
+
+  No covered work shall be deemed part of an effective technological
+measure under any applicable law fulfilling obligations under article
+11 of the WIPO copyright treaty adopted on 20 December 1996, or
+similar laws prohibiting or restricting circumvention of such
+measures.
+
+  When you convey a covered work, you waive any legal power to forbid
+circumvention of technological measures to the extent such circumvention
+is effected by exercising rights under this License with respect to
+the covered work, and you disclaim any intention to limit operation or
+modification of the work as a means of enforcing, against the work's
+users, your or third parties' legal rights to forbid circumvention of
+technological measures.
+
+  4. Conveying Verbatim Copies.
+
+  You may convey verbatim copies of the Program's source code as you
+receive it, in any medium, provided that you conspicuously and
+appropriately publish on each copy an appropriate copyright notice;
+keep intact all notices stating that this License and any
+non-permissive terms added in accord with section 7 apply to the code;
+keep intact all notices of the absence of any warranty; and give all
+recipients a copy of this License along with the Program.
+
+  You may charge any price or no price for each copy that you convey,
+and you may offer support or warranty protection for a fee.
+
+  5. Conveying Modified Source Versions.
+
+  You may convey a work based on the Program, or the modifications to
+produce it from the Program, in the form of source code under the
+terms of section 4, provided that you also meet all of these conditions:
+
+    a) The work must carry prominent notices stating that you modified
+    it, and giving a relevant date.
+
+    b) The work must carry prominent notices stating that it is
+    released under this License and any conditions added under section
+    7.  This requirement modifies the requirement in section 4 to
+    "keep intact all notices".
+
+    c) You must license the entire work, as a whole, under this
+    License to anyone who comes into possession of a copy.  This
+    License will therefore apply, along with any applicable section 7
+    additional terms, to the whole of the work, and all its parts,
+    regardless of how they are packaged.  This License gives no
+    permission to license the work in any other way, but it does not
+    invalidate such permission if you have separately received it.
+
+    d) If the work has interactive user interfaces, each must display
+    Appropriate Legal Notices; however, if the Program has interactive
+    interfaces that do not display Appropriate Legal Notices, your
+    work need not make them do so.
+
+  A compilation of a covered work with other separate and independent
+works, which are not by their nature extensions of the covered work,
+and which are not combined with it such as to form a larger program,
+in or on a volume of a storage or distribution medium, is called an
+"aggregate" if the compilation and its resulting copyright are not
+used to limit the access or legal rights of the compilation's users
+beyond what the individual works permit.  Inclusion of a covered work
+in an aggregate does not cause this License to apply to the other
+parts of the aggregate.
+
+  6. Conveying Non-Source Forms.
+
+  You may convey a covered work in object code form under the terms
+of sections 4 and 5, provided that you also convey the
+machine-readable Corresponding Source under the terms of this License,
+in one of these ways:
+
+    a) Convey the object code in, or embodied in, a physical product
+    (including a physical distribution medium), accompanied by the
+    Corresponding Source fixed on a durable physical medium
+    customarily used for software interchange.
+
+    b) Convey the object code in, or embodied in, a physical product
+    (including a physical distribution medium), accompanied by a
+    written offer, valid for at least three years and valid for as
+    long as you offer spare parts or customer support for that product
+    model, to give anyone who possesses the object code either (1) a
+    copy of the Corresponding Source for all the software in the
+    product that is covered by this License, on a durable physical
+    medium customarily used for software interchange, for a price no
+    more than your reasonable cost of physically performing this
+    conveying of source, or (2) access to copy the
+    Corresponding Source from a network server at no charge.
+
+    c) Convey individual copies of the object code with a copy of the
+    written offer to provide the Corresponding Source.  This
+    alternative is allowed only occasionally and noncommercially, and
+    only if you received the object code with such an offer, in accord
+    with subsection 6b.
+
+    d) Convey the object code by offering access from a designated
+    place (gratis or for a charge), and offer equivalent access to the
+    Corresponding Source in the same way through the same place at no
+    further charge.  You need not require recipients to copy the
+    Corresponding Source along with the object code.  If the place to
+    copy the object code is a network server, the Corresponding Source
+    may be on a different server (operated by you or a third party)
+    that supports equivalent copying facilities, provided you maintain
+    clear directions next to the object code saying where to find the
+    Corresponding Source.  Regardless of what server hosts the
+    Corresponding Source, you remain obligated to ensure that it is
+    available for as long as needed to satisfy these requirements.
+
+    e) Convey the object code using peer-to-peer transmission, provided
+    you inform other peers where the object code and Corresponding
+    Source of the work are being offered to the general public at no
+    charge under subsection 6d.
+
+  A separable portion of the object code, whose source code is excluded
+from the Corresponding Source as a System Library, need not be
+included in conveying the object code work.
+
+  A "User Product" is either (1) a "consumer product", which means any
+tangible personal property which is normally used for personal, family,
+or household purposes, or (2) anything designed or sold for incorporation
+into a dwelling.  In determining whether a product is a consumer product,
+doubtful cases shall be resolved in favor of coverage.  For a particular
+product received by a particular user, "normally used" refers to a
+typical or common use of that class of product, regardless of the status
+of the particular user or of the way in which the particular user
+actually uses, or expects or is expected to use, the product.  A product
+is a consumer product regardless of whether the product has substantial
+commercial, industrial or non-consumer uses, unless such uses represent
+the only significant mode of use of the product.
+
+  "Installation Information" for a User Product means any methods,
+procedures, authorization keys, or other information required to install
+and execute modified versions of a covered work in that User Product from
+a modified version of its Corresponding Source.  The information must
+suffice to ensure that the continued functioning of the modified object
+code is in no case prevented or interfered with solely because
+modification has been made.
+
+  If you convey an object code work under this section in, or with, or
+specifically for use in, a User Product, and the conveying occurs as
+part of a transaction in which the right of possession and use of the
+User Product is transferred to the recipient in perpetuity or for a
+fixed term (regardless of how the transaction is characterized), the
+Corresponding Source conveyed under this section must be accompanied
+by the Installation Information.  But this requirement does not apply
+if neither you nor any third party retains the ability to install
+modified object code on the User Product (for example, the work has
+been installed in ROM).
+
+  The requirement to provide Installation Information does not include a
+requirement to continue to provide support service, warranty, or updates
+for a work that has been modified or installed by the recipient, or for
+the User Product in which it has been modified or installed.  Access to a
+network may be denied when the modification itself materially and
+adversely affects the operation of the network or violates the rules and
+protocols for communication across the network.
+
+  Corresponding Source conveyed, and Installation Information provided,
+in accord with this section must be in a format that is publicly
+documented (and with an implementation available to the public in
+source code form), and must require no special password or key for
+unpacking, reading or copying.
+
+  7. Additional Terms.
+
+  "Additional permissions" are terms that supplement the terms of this
+License by making exceptions from one or more of its conditions.
+Additional permissions that are applicable to the entire Program shall
+be treated as though they were included in this License, to the extent
+that they are valid under applicable law.  If additional permissions
+apply only to part of the Program, that part may be used separately
+under those permissions, but the entire Program remains governed by
+this License without regard to the additional permissions.
+
+  When you convey a copy of a covered work, you may at your option
+remove any additional permissions from that copy, or from any part of
+it.  (Additional permissions may be written to require their own
+removal in certain cases when you modify the work.)  You may place
+additional permissions on material, added by you to a covered work,
+for which you have or can give appropriate copyright permission.
+
+  Notwithstanding any other provision of this License, for material you
+add to a covered work, you may (if authorized by the copyright holders of
+that material) supplement the terms of this License with terms:
+
+    a) Disclaiming warranty or limiting liability differently from the
+    terms of sections 15 and 16 of this License; or
+
+    b) Requiring preservation of specified reasonable legal notices or
+    author attributions in that material or in the Appropriate Legal
+    Notices displayed by works containing it; or
+
+    c) Prohibiting misrepresentation of the origin of that material, or
+    requiring that modified versions of such material be marked in
+    reasonable ways as different from the original version; or
+
+    d) Limiting the use for publicity purposes of names of licensors or
+    authors of the material; or
+
+    e) Declining to grant rights under trademark law for use of some
+    trade names, trademarks, or service marks; or
+
+    f) Requiring indemnification of licensors and authors of that
+    material by anyone who conveys the material (or modified versions of
+    it) with contractual assumptions of liability to the recipient, for
+    any liability that these contractual assumptions directly impose on
+    those licensors and authors.
+
+  All other non-permissive additional terms are considered "further
+restrictions" within the meaning of section 10.  If the Program as you
+received it, or any part of it, contains a notice stating that it is
+governed by this License along with a term that is a further
+restriction, you may remove that term.  If a license document contains
+a further restriction but permits relicensing or conveying under this
+License, you may add to a covered work material governed by the terms
+of that license document, provided that the further restriction does
+not survive such relicensing or conveying.
+
+  If you add terms to a covered work in accord with this section, you
+must place, in the relevant source files, a statement of the
+additional terms that apply to those files, or a notice indicating
+where to find the applicable terms.
+
+  Additional terms, permissive or non-permissive, may be stated in the
+form of a separately written license, or stated as exceptions;
+the above requirements apply either way.
+
+  8. Termination.
+
+  You may not propagate or modify a covered work except as expressly
+provided under this License.  Any attempt otherwise to propagate or
+modify it is void, and will automatically terminate your rights under
+this License (including any patent licenses granted under the third
+paragraph of section 11).
+
+  However, if you cease all violation of this License, then your
+license from a particular copyright holder is reinstated (a)
+provisionally, unless and until the copyright holder explicitly and
+finally terminates your license, and (b) permanently, if the copyright
+holder fails to notify you of the violation by some reasonable means
+prior to 60 days after the cessation.
+
+  Moreover, your license from a particular copyright holder is
+reinstated permanently if the copyright holder notifies you of the
+violation by some reasonable means, this is the first time you have
+received notice of violation of this License (for any work) from that
+copyright holder, and you cure the violation prior to 30 days after
+your receipt of the notice.
+
+  Termination of your rights under this section does not terminate the
+licenses of parties who have received copies or rights from you under
+this License.  If your rights have been terminated and not permanently
+reinstated, you do not qualify to receive new licenses for the same
+material under section 10.
+
+  9. Acceptance Not Required for Having Copies.
+
+  You are not required to accept this License in order to receive or
+run a copy of the Program.  Ancillary propagation of a covered work
+occurring solely as a consequence of using peer-to-peer transmission
+to receive a copy likewise does not require acceptance.  However,
+nothing other than this License grants you permission to propagate or
+modify any covered work.  These actions infringe copyright if you do
+not accept this License.  Therefore, by modifying or propagating a
+covered work, you indicate your acceptance of this License to do so.
+
+  10. Automatic Licensing of Downstream Recipients.
+
+  Each time you convey a covered work, the recipient automatically
+receives a license from the original licensors, to run, modify and
+propagate that work, subject to this License.  You are not responsible
+for enforcing compliance by third parties with this License.
+
+  An "entity transaction" is a transaction transferring control of an
+organization, or substantially all assets of one, or subdividing an
+organization, or merging organizations.  If propagation of a covered
+work results from an entity transaction, each party to that
+transaction who receives a copy of the work also receives whatever
+licenses to the work the party's predecessor in interest had or could
+give under the previous paragraph, plus a right to possession of the
+Corresponding Source of the work from the predecessor in interest, if
+the predecessor has it or can get it with reasonable efforts.
+
+  You may not impose any further restrictions on the exercise of the
+rights granted or affirmed under this License.  For example, you may
+not impose a license fee, royalty, or other charge for exercise of
+rights granted under this License, and you may not initiate litigation
+(including a cross-claim or counterclaim in a lawsuit) alleging that
+any patent claim is infringed by making, using, selling, offering for
+sale, or importing the Program or any portion of it.
+
+  11. Patents.
+
+  A "contributor" is a copyright holder who authorizes use under this
+License of the Program or a work on which the Program is based.  The
+work thus licensed is called the contributor's "contributor version".
+
+  A contributor's "essential patent claims" are all patent claims
+owned or controlled by the contributor, whether already acquired or
+hereafter acquired, that would be infringed by some manner, permitted
+by this License, of making, using, or selling its contributor version,
+but do not include claims that would be infringed only as a
+consequence of further modification of the contributor version.  For
+purposes of this definition, "control" includes the right to grant
+patent sublicenses in a manner consistent with the requirements of
+this License.
+
+  Each contributor grants you a non-exclusive, worldwide, royalty-free
+patent license under the contributor's essential patent claims, to
+make, use, sell, offer for sale, import and otherwise run, modify and
+propagate the contents of its contributor version.
+
+  In the following three paragraphs, a "patent license" is any express
+agreement or commitment, however denominated, not to enforce a patent
+(such as an express permission to practice a patent or covenant not to
+sue for patent infringement).  To "grant" such a patent license to a
+party means to make such an agreement or commitment not to enforce a
+patent against the party.
+
+  If you convey a covered work, knowingly relying on a patent license,
+and the Corresponding Source of the work is not available for anyone
+to copy, free of charge and under the terms of this License, through a
+publicly available network server or other readily accessible means,
+then you must either (1) cause the Corresponding Source to be so
+available, or (2) arrange to deprive yourself of the benefit of the
+patent license for this particular work, or (3) arrange, in a manner
+consistent with the requirements of this License, to extend the patent
+license to downstream recipients.  "Knowingly relying" means you have
+actual knowledge that, but for the patent license, your conveying the
+covered work in a country, or your recipient's use of the covered work
+in a country, would infringe one or more identifiable patents in that
+country that you have reason to believe are valid.
+
+  If, pursuant to or in connection with a single transaction or
+arrangement, you convey, or propagate by procuring conveyance of, a
+covered work, and grant a patent license to some of the parties
+receiving the covered work authorizing them to use, propagate, modify
+or convey a specific copy of the covered work, then the patent license
+you grant is automatically extended to all recipients of the covered
+work and works based on it.
+
+  A patent license is "discriminatory" if it does not include within
+the scope of its coverage, prohibits the exercise of, or is
+conditioned on the non-exercise of one or more of the rights that are
+specifically granted under this License.  You may not convey a covered
+work if you are a party to an arrangement with a third party that is
+in the business of distributing software, under which you make payment
+to the third party based on the extent of your activity of conveying
+the work, and under which the third party grants, to any of the
+parties who would receive the covered work from you, a discriminatory
+patent license (a) in connection with copies of the covered work
+conveyed by you (or copies made from those copies), or (b) primarily
+for and in connection with specific products or compilations that
+contain the covered work, unless you entered into that arrangement,
+or that patent license was granted, prior to 28 March 2007.
+
+  Nothing in this License shall be construed as excluding or limiting
+any implied license or other defenses to infringement that may
+otherwise be available to you under applicable patent law.
+
+  12. No Surrender of Others' Freedom.
+
+  If conditions are imposed on you (whether by court order, agreement or
+otherwise) that contradict the conditions of this License, they do not
+excuse you from the conditions of this License.  If you cannot convey a
+covered work so as to satisfy simultaneously your obligations under this
+License and any other pertinent obligations, then as a consequence you may
+not convey it at all.  For example, if you agree to terms that obligate you
+to collect a royalty for further conveying from those to whom you convey
+the Program, the only way you could satisfy both those terms and this
+License would be to refrain entirely from conveying the Program.
+
+  13. Use with the GNU Affero General Public License.
+
+  Notwithstanding any other provision of this License, you have
+permission to link or combine any covered work with a work licensed
+under version 3 of the GNU Affero General Public License into a single
+combined work, and to convey the resulting work.  The terms of this
+License will continue to apply to the part which is the covered work,
+but the special requirements of the GNU Affero General Public License,
+section 13, concerning interaction through a network will apply to the
+combination as such.
+
+  14. Revised Versions of this License.
+
+  The Free Software Foundation may publish revised and/or new versions of
+the GNU General Public License from time to time.  Such new versions will
+be similar in spirit to the present version, but may differ in detail to
+address new problems or concerns.
+
+  Each version is given a distinguishing version number.  If the
+Program specifies that a certain numbered version of the GNU General
+Public License "or any later version" applies to it, you have the
+option of following the terms and conditions either of that numbered
+version or of any later version published by the Free Software
+Foundation.  If the Program does not specify a version number of the
+GNU General Public License, you may choose any version ever published
+by the Free Software Foundation.
+
+  If the Program specifies that a proxy can decide which future
+versions of the GNU General Public License can be used, that proxy's
+public statement of acceptance of a version permanently authorizes you
+to choose that version for the Program.
+
+  Later license versions may give you additional or different
+permissions.  However, no additional obligations are imposed on any
+author or copyright holder as a result of your choosing to follow a
+later version.
+
+  15. Disclaimer of Warranty.
+
+  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
+APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
+HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
+OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM
+IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF
+ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+  16. Limitation of Liability.
+
+  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS
+THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
+GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
+DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
+PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
+EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+  17. Interpretation of Sections 15 and 16.
+
+  If the disclaimer of warranty and limitation of liability provided
+above cannot be given local legal effect according to their terms,
+reviewing courts shall apply local law that most closely approximates
+an absolute waiver of all civil liability in connection with the
+Program, unless a warranty or assumption of liability accompanies a
+copy of the Program in return for a fee.
+
+                     END OF TERMS AND CONDITIONS
+
+            How to Apply These Terms to Your New Programs
+
+  If you develop a new program, and you want it to be of the greatest
+possible use to the public, the best way to achieve this is to make it
+free software which everyone can redistribute and change under these terms.
+
+  To do so, attach the following notices to the program.  It is safest
+to attach them to the start of each source file to most effectively
+state the exclusion of warranty; and each file should have at least
+the "copyright" line and a pointer to where the full notice is found.
+
+    <one line to give the program's name and a brief idea of what it does.>
+    Copyright (C) <year>  <name of author>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Also add information on how to contact you by electronic and paper mail.
+
+  If the program does terminal interaction, make it output a short
+notice like this when it starts in an interactive mode:
+
+    <program>  Copyright (C) <year>  <name of author>
+    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; type `show c' for details.
+
+The hypothetical commands `show w' and `show c' should show the appropriate
+parts of the General Public License.  Of course, your program's commands
+might be different; for a GUI interface, you would use an "about box".
+
+  You should also get your employer (if you work as a programmer) or school,
+if any, to sign a "copyright disclaimer" for the program, if necessary.
+For more information on this, and how to apply and follow the GNU GPL, see
+<https://www.gnu.org/licenses/>.
+
+  The GNU General Public License does not permit incorporating your program
+into proprietary programs.  If your program is a subroutine library, you
+may consider it more useful to permit linking proprietary applications with
+the library.  If this is what you want to do, use the GNU Lesser General
+Public License instead of this License.  But first, please read
+<https://www.gnu.org/licenses/why-not-lgpl.html>.
+
+-->
+</html>
