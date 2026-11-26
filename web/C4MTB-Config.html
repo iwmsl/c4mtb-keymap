@@ -27,6 +27,7 @@ p{line-height:1.65}
 .brand-icon i{border:1px solid var(--accent);border-radius:2px}
 .brand-icon i:last-child{background:var(--accent)}
 .connection,.footer-actions,.editor-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.connection{justify-content:flex-end;gap:8px}
 #connection-status{font-size:13px;color:var(--dim);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
 #connection-status i{width:8px;height:8px;border-radius:50%;background:#7a8798}
 #connection-status[data-state="active"] i{background:var(--accent)}
@@ -115,7 +116,9 @@ input[type=checkbox],input[type=range]{accent-color:#cbea7c}
 @media(max-width:880px){.header-inner,.frame{padding:0 23px}.workbench{grid-template-columns:minmax(0,1fr)}.keyboard{max-width:650px}.editor-card{max-width:none}.combo-workbench{align-items:stretch}}
 @media(max-width:550px){.frame,.header-inner{padding:0 14px}.header-inner{height:62px}.brand em{display:none}.brand{font-size:16px;gap:5px}.intro{padding:26px 0 17px;align-items:flex-start;flex-wrap:wrap}.card{padding:15px}.source-footer{flex-wrap:wrap}.test-line label{display:none}.tabs{gap:14px}.tabs a{font-size:13px}.callout{flex-wrap:wrap}.keyboard-scroll{margin-inline:-6px}.small-select{display:block}.small-select select{max-width:128px}}
 
-#key-grid{max-width:790px}.keyboard-card{background:linear-gradient(145deg,#243638,#18232a 70%)}.card{box-shadow:0 10px 32px #0002}.keyboard-scroll{border-block:1px solid #405254;padding-block:14px}.key small{font-size:.7em;align-self:start}.key[data-hit=true],.layers button[data-hit=true]{outline:2px dashed #8bd6de;outline-offset:-3px}.key[data-change=true]::after{content:"";position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#ffbc71}#matches{max-height:145px;overflow:auto;display:grid;gap:4px;margin-bottom:10px}#matches button{text-align:left;padding:7px;color:var(--text);background:#263b40;border:1px solid #496468;border-radius:6px}#role{font-weight:700;font-size:1.15rem}#related,#status-detail{font-size:.84rem;white-space:pre-line;color:var(--dim);margin:7px 0 15px}#save-state{border-left:3px solid var(--accent);padding-left:10px}#save-state[data-pending=true]{border-color:#ffbc71}</style>
+#key-grid{max-width:790px}.keyboard-card{background:linear-gradient(145deg,#243638,#18232a 70%)}.card{box-shadow:0 10px 32px #0002}.keyboard-scroll{border-block:1px solid #405254;padding-block:14px}.key small{font-size:.7em;align-self:start}.key[data-hit=true],.layers button[data-hit=true]{outline:2px dashed #8bd6de;outline-offset:-3px}.key[data-change=true]::after{content:"";position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#ffbc71}#matches{max-height:145px;overflow:auto;display:grid;gap:4px;margin-bottom:10px}#matches button{text-align:left;padding:7px;color:var(--text);background:#263b40;border:1px solid #496468;border-radius:6px}#role{font-weight:700;font-size:1.15rem}#related,#status-detail{font-size:.84rem;white-space:pre-line;color:var(--dim);margin:7px 0 15px}#save-state{border-left:3px solid var(--accent);padding-left:10px}#save-state[data-pending=true]{border-color:#ffbc71}
+@media(max-width:550px){.header-inner{min-height:62px;height:auto;padding-block:8px}}
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -127,6 +130,8 @@ input[type=checkbox],input[type=range]{accent-color:#cbea7c}
     <div class="connection">
       <span id="connection-status" data-state="offline"><i></i><span>未接続</span></span>
       <button id="connect" class="button primary">USBで接続</button>
+      <button id="connect-ble" class="button subtle" hidden>Bluetoothで接続</button>
+      <button id="disconnect" class="button subtle" hidden>切断</button>
     </div>
   </div>
 </header>
@@ -141,6 +146,7 @@ input[type=checkbox],input[type=range]{accent-color:#cbea7c}
     <code id="startup-code" hidden></code>
   </div>
   <div id="alert" class="alert" role="status" aria-live="polite" hidden></div>
+  <p id="connection-hint" class="alert" hidden>iPhoneから本体に接続するには、BluefyでこのアプリのHTTPSアドレスを開いてください。</p>
   <aside id="unlock" class="callout" hidden>
     <div><strong>キーボードでStudioロックを解除</strong>
     <p>左右の内側の拡張キーを同時に押したまま、<kbd>Y</kbd> を押してください。現行の配列では拡張キーは左 <kbd>Ctrl</kbd> と右 <kbd>Alt</kbd> の位置です。</p></div>
@@ -156,7 +162,7 @@ input[type=checkbox],input[type=range]{accent-color:#cbea7c}
       <div class="card keyboard-card">
         <div class="section-head">
           <div><h2>キー配列</h2><p id="keymap-note">キーを選ぶと割り当てを編集できます。</p></div>
-          <label id="keymap-mode-wrap" class="small-select" hidden><span>編集先</span><select id="keymap-mode"><option value="device">USB接続中の本体</option><option value="file">設定ファイル</option></select></label>
+          <label id="keymap-mode-wrap" class="small-select" hidden><span>編集先</span><select id="keymap-mode"><option value="device">接続中の本体</option><option value="file">設定ファイル</option></select></label>
         </div>
         <label class="field"><span>動作から探す</span><input id="lookup" type="text" placeholder="左クリック、Shift＋Tab、スクロール…" autocomplete="off"></label><div id="matches"></div><div class="layers" id="layer-buttons" aria-label="レイヤー"></div>
         <div class="keyboard-scroll"><div class="keyboard" id="key-grid" aria-label="C4MTBの38キー"></div></div>
@@ -181,7 +187,7 @@ input[type=checkbox],input[type=range]{accent-color:#cbea7c}
       <div class="card keyboard-card">
         <div class="section-head"><div><h2>コンボ</h2><p id="combo-note">同時押しするキーを配列から選べます。</p></div>
           <div class="footer-actions">
-            <label class="small-select" id="combo-mode-wrap" hidden><span>編集先</span><select id="combo-mode"><option value="device">USB接続中の本体</option><option value="file">設定ファイル</option></select></label>
+            <label class="small-select" id="combo-mode-wrap" hidden><span>編集先</span><select id="combo-mode"><option value="device">接続中の本体</option><option value="file">設定ファイル</option></select></label>
             <button class="button subtle" id="add-combo">＋ コンボを追加</button>
           </div>
         </div>
@@ -239,11 +245,12 @@ input[type=checkbox],input[type=range]{accent-color:#cbea7c}
       <button id="download" class="button primary">.keymap を書き出す</button></div>
   </footer>
   <details class="help" id="help">
-    <summary>USB接続とファームウェアの更新方法</summary>
+    <summary>接続とファームウェアの更新方法</summary>
+    <p>iPhoneではBluefyでこのアプリのHTTPSアドレスを開きます。C4MTBのBluetoothプロファイルをiPhoneに切り替えてペアリングし、「Bluetoothで接続」を押してください。USBにもつないでいる場合は、キーボードの出力先をBluetoothに切り替えてください。</p>
     <p>WindowsのChromeまたはEdgeで、HTTPSのURLかダウンロードしたHTMLを開きます。右手側をデータ通信対応のUSBケーブルでつなぎ、以前に使っていた設定アプリを閉じてから「USBで接続」を押してください。</p>
     <p>ファイルで編集した設定は、書き出した <code>c4mtb.keymap</code> を GitHub の <a href="https://github.com/iwmsl/c4mtb-keymap/blob/main/config/c4mtb.keymap" target="_blank" rel="noopener noreferrer">config/c4mtb.keymap</a> に反映し、Actions が生成した通常版の <code>c4mtb_R.uf2</code> を右手側に書き込みます。右手側のブートローダーはリセットボタンの2回押しで起動できます。</p>
-    <p>USBでコンボを編集するには、右手側にコンボ対応版の <code>c4mtb_R_usb_combos.uf2</code> を一度書き込みます。USB編集で保存したコンボは、本体で使う設定です。</p>
-    <p>本体のキーマップをUSBで保存したことがある場合、ファームウェアの既定配列よりUSBで保存した割り当てが優先されます。コンボだけ編集する場合は、GitHub上の最新の .keymap を開いて編集すると、ファイル側のキー割り当ても引き継げます。</p>
+    <p>USBまたはBluetoothで本体のコンボを編集するには、右手側にコンボ対応版の <code>c4mtb_R_usb_combos.uf2</code> が必要です。</p>
+    <p>本体に保存したキー割り当ては、ファームウェアの既定配列より優先されます。コンボだけ編集する場合は、GitHub上の最新の .keymap を開いて編集すると、ファイル側のキー割り当ても引き継げます。</p>
   </details>
 </main>
 <script id="startup-diagnostics">
@@ -370,9 +377,73 @@ function frameDecoder(onFrame) {
   };
 }
 
+const STUDIO_BLE_SERVICE = "00000000-0196-6107-c967-c5cfb1c2482a";
+const STUDIO_BLE_RPC = "00000001-0196-6107-c967-c5cfb1c2482a";
+// ATT's minimum MTU is 23 bytes, including the 3-byte write header.
+const STUDIO_BLE_WRITE_SIZE = 20;
+
+class StudioBluetoothPort {
+  constructor(device) {
+    this.device = device;
+    this.transport = "Bluetooth";
+    this.receive = ({target}) => {
+      const value = target.value;
+      if (value?.byteLength && this.input) {
+        const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+        this.input.enqueue(bytes.slice());
+      }
+    };
+    this.disconnected = () => this.closeInput();
+  }
+
+  async open() {
+    this.device.addEventListener("gattserverdisconnected", this.disconnected);
+    try {
+      const server = await this.device.gatt.connect();
+      const service = await server.getPrimaryService(STUDIO_BLE_SERVICE);
+      this.characteristic = await service.getCharacteristic(STUDIO_BLE_RPC);
+      this.readable = new ReadableStream({
+        start: (controller) => { this.input = controller; },
+        cancel: () => { this.input = null; },
+      });
+      this.characteristic.addEventListener("characteristicvaluechanged", this.receive);
+      await this.characteristic.startNotifications();
+      if (!this.device.gatt.connected) throw new Error("接続が切れました。");
+      this.writable = new WritableStream({write: (bytes) => this.write(bytes)});
+    } catch (error) {
+      await this.close();
+      throw new Error("Bluetooth設定用の接続を開けませんでした。iPhoneとのペアリングと対応ファームウェアを確認してください。", {cause: error});
+    }
+  }
+
+  async write(bytes) {
+    const characteristic = this.characteristic;
+    // Bluefy versions may expose the legacy writeValue API.
+    const write = characteristic.writeValueWithResponse ?? characteristic.writeValue;
+    for (let offset = 0; offset < bytes.length; offset += STUDIO_BLE_WRITE_SIZE) {
+      if (!this.device.gatt.connected || !this.input) throw new Error("Bluetooth接続が切れました。");
+      await write.call(characteristic, bytes.slice(offset, offset + STUDIO_BLE_WRITE_SIZE));
+    }
+  }
+
+  closeInput() {
+    const controller = this.input;
+    this.input = null;
+    controller?.close();
+  }
+
+  async close() {
+    this.device.removeEventListener("gattserverdisconnected", this.disconnected);
+    this.characteristic?.removeEventListener("characteristicvaluechanged", this.receive);
+    this.closeInput();
+    if (this.device.gatt.connected) this.device.gatt.disconnect();
+  }
+}
+
 class StudioPort {
   constructor(port, onLock, onClose) {
     this.port = port;
+    this.transport = port.transport ?? "USB";
     this.onLock = onLock;
     this.onClose = onClose;
     this.sequence = 0;
@@ -382,7 +453,7 @@ class StudioPort {
     await this.port.open({baudRate: 12500});
     if (!this.port.readable || !this.port.writable) {
       await this.port.close();
-      throw new Error("USBシリアルポートを開けませんでした。");
+      throw new Error(this.transport + "接続を開けませんでした。");
     }
     this.reader = this.port.readable.getReader();
     this.writer = this.port.writable.getWriter();
@@ -401,7 +472,7 @@ class StudioPort {
       this.pending?.reject(error);
     } finally {
       this.reader.releaseLock();
-      this.pending?.reject(new Error("USB接続が切れました。"));
+      this.pending?.reject(new Error(this.transport + "接続が切れました。"));
       if (!this.closing) queueMicrotask(() => {
         this.onClose();
         void this.close();
@@ -427,7 +498,7 @@ class StudioPort {
   async close() {
     if (this.closing) return this.closing;
     this.closing = (async () => {
-      this.pending?.reject(new Error("USB接続が切れました。"));
+      this.pending?.reject(new Error(this.transport + "接続が切れました。"));
       await this.reader?.cancel().catch(() => {});
       await this.reading;
       this.writer?.releaseLock();
@@ -437,14 +508,16 @@ class StudioPort {
   }
 
   async request(subsystem, payload) {
-    if (this.closing || !this.writer) throw new Error("USB接続を確認してください。");
+    if (this.closing || !this.writer) throw new Error(this.transport + "接続を確認してください。");
     if (this.pending) throw new Error("本体が処理中です。");
     const id = ++this.sequence;
     const bytes = encodeFrame(message([1, id], [subsystem, payload]));
     let timer;
     const response = new Promise((resolve, reject) => {
       this.pending = {id, resolve, reject};
-      timer = setTimeout(() => reject(new Error("本体の応答を確認できませんでした。USB接続とファームウェアを確認してください。")), 5500);
+      const timeout = this.transport === "Bluetooth" ? 18000 : 5500;
+      const hint = this.transport === "Bluetooth" ? "C4MTBの出力先をBluetoothに切り替えてください。" : "USB接続とファームウェアを確認してください。";
+      timer = setTimeout(() => reject(new Error("本体の応答を確認できませんでした。" + hint)), timeout);
     });
     try {
       void this.writer.write(bytes).catch(this.pending.reject);
@@ -1053,7 +1126,7 @@ function renderKeymap(resetField = false) {
   $("apply-key").textContent = live ? "実機で試す" : "ファイルに反映";
   $("save-keys").hidden = $("undo-keys").hidden = !live || state.pendingKeys.size === 0;
   $("save-keys").disabled = $("undo-keys").disabled = !available;
-  $("key-context").textContent = protectedKey ? "USB接続の解除キーはここに固定しています。" : live ?
+  $("key-context").textContent = protectedKey ? "Studioロックの解除キーはここに固定しています。" : live ?
     (state.pendingKeys.size ? state.pendingKeys.size + "件の未保存の変更。「本体に保存」で再起動後も使えます。" : "「実機で試す」で確認できます。必要な変更は本体に保存してください。") :
     "書き出したファイルからファームウェアを更新すると、既定の配列に反映されます。";
   details();
@@ -1228,7 +1301,7 @@ function updatePointerUI() {
   $("demo").hidden = Boolean(state.client);
   $("demo").disabled = state.busy;
   $("demo").textContent = state.demo ? "デモを終了" : "デモで試す";
-  $("pointer-note").textContent = state.demo ? "画面上だけのデモです。USB接続後は本体の設定を読み込みます。" :
+  $("pointer-note").textContent = state.demo ? "画面上だけのデモです。本体に接続すると実際の設定を読み込みます。" :
     hardware ? (previewing ? "本体で試用中です。再起動後も使うには保存してください。" : "右手側の本体設定を読み込みました。") :
     (state.client ? "接続中のファームウェアからトラックボール設定を読み込めませんでした。" : "接続前は標準値を表示しています。");
   for (const {name, min, max} of pointerSettings) {
@@ -1252,9 +1325,15 @@ function updatePointerUI() {
 function refreshChrome() {
   const status = $("connection-status");
   status.dataset.state = state.client ? state.unlocked ? "active" : "locked" : "offline";
-  status.lastElementChild.textContent = state.client ? state.unlocked ? "C4MTB 接続中" : "ロック中" : "未接続";
-  $("connect").disabled = state.busy;
-  $("connect").textContent = state.client ? "切断" : "USBで接続";
+  status.lastElementChild.textContent = state.client
+    ? state.client.transport + (state.unlocked ? " 接続中" : " ロック中")
+    : "未接続";
+  $("connect").hidden = Boolean(state.client) || !navigator.serial;
+  $("connect-ble").hidden = Boolean(state.client) || !navigator.bluetooth;
+  $("connect-ble").className = navigator.serial ? "button subtle" : "button primary";
+  $("disconnect").hidden = !state.client;
+  $("connection-hint").hidden = Boolean(state.client || navigator.serial || navigator.bluetooth);
+  $("connect").disabled = $("connect-ble").disabled = $("disconnect").disabled = state.busy;
   $("check-lock").disabled = state.busy;
   $("unlock").hidden = !state.client || state.unlocked;
   $("import").disabled = state.busy;
@@ -1343,15 +1422,29 @@ function lockChanged(client, unlocked) {
   if (unlocked && (!state.deviceLayers || !state.comboRuntime && client.subsystems.has(COMBO_SERVICE)) && !state.busy) void run(() => loadLiveSettings(client));
 }
 
-async function connectDevice() {
+async function pickStudioPort(transport) {
+  if (transport === "Bluetooth") {
+    if (!navigator.bluetooth || !window.isSecureContext) {
+      throw new Error("iPhoneでBluetooth編集するには、BluefyでこのアプリのHTTPSアドレスを開いてください。");
+    }
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{services: [STUDIO_BLE_SERVICE]}, {namePrefix: "c4mtb"}, {namePrefix: "C4MTB"}],
+      optionalServices: [STUDIO_BLE_SERVICE],
+    });
+    return new StudioBluetoothPort(device);
+  }
   if (!navigator.serial || !window.isSecureContext) {
     throw new Error("USB編集には、デスクトップ版Chrome／EdgeでHTTPSのURLまたはダウンロードしたHTMLを開いてください。");
   }
-  const port = await navigator.serial.requestPort();
+  return navigator.serial.requestPort();
+}
+
+async function connectDevice(transport) {
+  const port = await pickStudioPort(transport);
   const client = new StudioPort(port, (unlocked) => lockChanged(client, unlocked), () => {
     if (client === state.client) {
       resetDevice();
-      alertUser("USB接続が切れました。本体の保存状態は再接続して確認してください。", "error");
+      alertUser(client.transport + "接続が切れました。本体の保存状態は再接続して確認してください。", "error");
     }
   });
   try {
@@ -1361,6 +1454,7 @@ async function connectDevice() {
     }
     await client.discover();
     const unlocked = await client.unlocked();
+    if (client.closing) throw new Error(client.transport + "接続が切れました。");
     state.client = client;
     state.unlocked = unlocked;
     state.demo = false;
@@ -1399,13 +1493,13 @@ async function disconnectDevice() {
   const client = state.client;
   await client.close();
   resetDevice();
-  alertUser("USB接続を切断しました。");
+  alertUser(client.transport + "接続を切断しました。");
 }
 
 async function applyKey() {
   const raw = validateSourceBinding($("key-binding").value);
   const {layer, position} = state;
-  if (layer === 4 && position === 5) throw new Error("USBの解除キーはここに固定しています。");
+  if (layer === 4 && position === 5) throw new Error("Studioロックの解除キーはここに固定しています。");
   if (state.keyMode === "file") {
     const {start, end} = state.source.layers[layer][position];
     updateFile(spliceSource(state.source.source, [{start, end, text: raw}]));
@@ -1481,7 +1575,7 @@ async function refreshComboDevice() {
   if (!state.unlocked) throw new Error("本体のStudioロックを解除してください。");
   const runtime = state.comboRuntime;
   const next = await runtime.rpc.read();
-  if (runtime !== state.comboRuntime) throw new Error("USB接続が切れました。");
+  if (runtime !== state.comboRuntime) throw new Error("本体との接続が切れました。");
   const changed = JSON.stringify(next) !== JSON.stringify(runtime.data);
   runtime.data = next;
   return {runtime, changed};
@@ -1692,7 +1786,9 @@ updatePointerUI();
 showTab(location.hash.slice(1));
 window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
 
-$("connect").addEventListener("click", () => run(state.client ? disconnectDevice : connectDevice));
+$("connect").addEventListener("click", () => run(() => connectDevice("USB")));
+$("connect-ble").addEventListener("click", () => run(() => connectDevice("Bluetooth")));
+$("disconnect").addEventListener("click", () => run(disconnectDevice));
 $("check-lock").addEventListener("click", () => run(async () => {
   const client = state.client;
   lockChanged(client, await client.unlocked());
@@ -1780,6 +1876,7 @@ window.addEventListener("beforeunload", (event) => {
   }
 });
 
+refreshChrome();
 $("startup-status").hidden = true;
 </script>
 </body>
